@@ -178,14 +178,14 @@ export const loadDatabaseFromSupabase = async (): Promise<NexosDatabase | null> 
       vehicles: vehiclesRes.data || []
     };
     
-    // Auto-semeia o administrador se não existir no Supabase
+    // Auto-semeia o administrador com senha hashed se não existir no Supabase
     const hasAdmin = db.users.some(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
     if (!hasAdmin) {
       const adminUser: SystemUser = {
         id: 'user-admin',
         name: 'Administrador Nexos',
         email: '1993lumendes@gmail.com',
-        password: 'NexosAdmin2026!',
+        password: ADMIN_PASSWORD_HASH,
         role: 'Administrador do Sistema',
         assignmentCity: 'Lajeado',
         lastLogin: 'Nunca (Acesso Inicial)',

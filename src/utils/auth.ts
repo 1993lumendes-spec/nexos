@@ -4,8 +4,8 @@
  * senhas em texto puro no LocalStorage, Supabase ou sessionStorage.
  */
 
-/** SHA-256 da senha padrão do administrador (NexosAdmin2026!) */
-export const ADMIN_PASSWORD_HASH = 'cf48d524ecc5fabb84cacb95ab9ef0c723036339bce83096eec53a2a5bd9aa11';
+/** SHA-256 da senha do administrador — nunca altere este arquivo com a senha em texto puro */
+export const ADMIN_PASSWORD_HASH = '48dcfa2ce11afb859ca0d7493c9f7d00e3db79023a17224433525b6cef91bfa7';
 
 /**
  * Gera o hash SHA-256 de uma senha usando a Web Crypto API nativa.
