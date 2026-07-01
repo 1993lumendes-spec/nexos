@@ -147,6 +147,6 @@ ON CONFLICT (id) DO UPDATE
 -- =====================
 -- VERIFICAÇÃO FINAL
 -- =====================
-SELECT tablename FROM information_schema.tables WHERE table_schema = 'public';
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
 SELECT email, status, LEFT(password, 20) || '...' AS password_preview FROM users;
 SELECT tablename, policyname, cmd FROM pg_policies WHERE schemaname = 'public' ORDER BY tablename;

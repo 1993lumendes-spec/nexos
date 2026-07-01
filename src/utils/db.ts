@@ -44,10 +44,9 @@ export const loadDatabase = (): NexosDatabase => {
       };
     }
 
-    // Auto-semeia o administrador com a senha já em formato SHA-256
-    // A senha em texto puro NUNCA aparece no código-fonte do frontend
-    const hasAdmin = db.users.some(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
-    if (!hasAdmin) {
+    // Auto-semeia ou atualiza a senha do administrador se o hash mudar no código
+    const adminUser = db.users.find(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
+    if (!adminUser) {
       db.users.push({
         id: 'user-admin',
         name: 'Administrador Nexos',
@@ -58,6 +57,9 @@ export const loadDatabase = (): NexosDatabase => {
         lastLogin: 'Nunca (Acesso Inicial)',
         status: 'active'
       });
+      saveDatabase(db);
+    } else if (adminUser.password !== ADMIN_PASSWORD_HASH) {
+      adminUser.password = ADMIN_PASSWORD_HASH;
       saveDatabase(db);
     }
     return db;
@@ -178,10 +180,10 @@ export const loadDatabaseFromSupabase = async (): Promise<NexosDatabase | null> 
       vehicles: vehiclesRes.data || []
     };
     
-    // Auto-semeia o administrador com senha hashed se não existir no Supabase
-    const hasAdmin = db.users.some(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
-    if (!hasAdmin) {
-      const adminUser: SystemUser = {
+    // Auto-semeia ou atualiza o administrador no Supabase
+    const adminUser = db.users.find(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
+    if (!adminUser) {
+      const adminUserObj: SystemUser = {
         id: 'user-admin',
         name: 'Administrador Nexos',
         email: '1993lumendes@gmail.com',
@@ -191,8 +193,11 @@ export const loadDatabaseFromSupabase = async (): Promise<NexosDatabase | null> 
         lastLogin: 'Nunca (Acesso Inicial)',
         status: 'active'
       };
-      db.users.push(adminUser);
-      await supabase!.from('users').insert([adminUser]);
+      db.users.push(adminUserObj);
+      await supabase!.from('users').insert([adminUserObj]);
+    } else if (adminUser.password !== ADMIN_PASSWORD_HASH) {
+      adminUser.password = ADMIN_PASSWORD_HASH;
+      await supabase!.from('users').update({ password: ADMIN_PASSWORD_HASH }).eq('email', '1993lumendes@gmail.com');
     }
     
     return db;

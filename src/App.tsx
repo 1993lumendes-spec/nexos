@@ -301,6 +301,15 @@ function App() {
     }
   };
 
+  // Recuperação de senha instrutiva
+  const handleForgotPassword = () => {
+    alert(
+      "Recuperação de Senha:\n\n" +
+      "1. Se você é um Agente policial, solicite ao Administrador do Sistema (1993lumendes@gmail.com) para resetar sua senha através da guia 'Gestão de Usuários'.\n\n" +
+      "2. Se você é o Administrador, você pode redefinir a senha executando o script SQL de atualização no painel do Supabase, ou limpando os dados locais do seu navegador para restaurar a senha inicial."
+    );
+  };
+
   // Exportar backup
   const handleExport = () => {
     exportDatabaseToJson(db);
@@ -479,7 +488,7 @@ function App() {
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: isLoginMode ? '8px' : '15px' }}>
               <label>Senha de Acesso</label>
               <input 
                 type="password" 
@@ -490,6 +499,26 @@ function App() {
                 required
               />
             </div>
+
+            {isLoginMode && (
+              <div style={{ textAlign: 'right', marginBottom: '16px' }}>
+                <button 
+                  type="button" 
+                  onClick={handleForgotPassword} 
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    color: 'var(--text-secondary)', 
+                    fontSize: '0.75rem', 
+                    cursor: 'pointer', 
+                    textDecoration: 'underline',
+                    padding: 0 
+                  }}
+                >
+                  Esqueceu a senha?
+                </button>
+              </div>
+            )}
 
             {/* Requisitos de senha forte (apenas no modo Registro) */}
             {!isLoginMode && (

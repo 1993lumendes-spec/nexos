@@ -51,10 +51,10 @@ function getDatabase() {
     }
 
     // Auto-semeia o usuário administrador se não existir
-    const hasAdmin = db.users.some(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
-    if (!hasAdmin) {
-      // Senha hash gerada em runtime — nunca armazenamos texto puro
-      const adminHash = bcrypt.hashSync(process.env.ADMIN_DEFAULT_PASSWORD || 'NexosAdmin2026!', SALT_ROUNDS);
+    const adminUser = db.users.find(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
+    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || '#Arla$15582#';
+    if (!adminUser) {
+      const adminHash = bcrypt.hashSync(defaultPassword, SALT_ROUNDS);
       db.users.push({
         id: 'user-admin',
         name: 'Administrador Nexos',
@@ -66,6 +66,13 @@ function getDatabase() {
         status: 'active'
       });
       fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+    } else {
+      // Se a senha armazenada for a antiga default (NexosAdmin2026!), atualiza para a nova
+      const isOldPassword = bcrypt.compareSync('NexosAdmin2026!', adminUser.password);
+      if (isOldPassword) {
+        adminUser.password = bcrypt.hashSync(defaultPassword, SALT_ROUNDS);
+        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+      }
     }
     return db;
   } catch (error) {
