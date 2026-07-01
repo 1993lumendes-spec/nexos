@@ -30,6 +30,16 @@ const DEFAULT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/20
 
 export const MOCK_USERS: SystemUser[] = [
   {
+    id: 'user-admin',
+    name: 'Administrador Nexos',
+    email: '1993lumendes@gmail.com',
+    password: 'NexosAdmin2026!',
+    role: 'Administrador do Sistema',
+    assignmentCity: 'Lajeado',
+    lastLogin: 'Nunca (Acesso Inicial)',
+    status: 'active'
+  },
+  {
     id: 'user-1',
     name: 'Inspetor Marcelo Rodrigues',
     email: 'marcelo.rodrigues@pc.rs.gov.br',

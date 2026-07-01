@@ -22,19 +22,43 @@ const cleanDbTemplate = {
 // Carrega o banco de dados do arquivo JSON
 function getDatabase() {
   try {
+    let db;
     if (!fs.existsSync(DB_FILE)) {
-      fs.writeFileSync(DB_FILE, JSON.stringify(cleanDbTemplate, null, 2), 'utf-8');
-      return cleanDbTemplate;
+      db = {
+        gangs: [],
+        suspects: [],
+        crimes: [],
+        users: [],
+        vehicles: []
+      };
+    } else {
+      const data = fs.readFileSync(DB_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      db = {
+        gangs: parsed.gangs || [],
+        suspects: parsed.suspects || [],
+        crimes: parsed.crimes || [],
+        users: parsed.users || [],
+        vehicles: parsed.vehicles || []
+      };
     }
-    const data = fs.readFileSync(DB_FILE, 'utf-8');
-    const parsed = JSON.parse(data);
-    return {
-      gangs: parsed.gangs || [],
-      suspects: parsed.suspects || [],
-      crimes: parsed.crimes || [],
-      users: parsed.users || [],
-      vehicles: parsed.vehicles || []
-    };
+
+    // Auto-semeia o usuário administrador se não existir
+    const hasAdmin = db.users.some(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
+    if (!hasAdmin) {
+      db.users.push({
+        id: 'user-admin',
+        name: 'Administrador Nexos',
+        email: '1993lumendes@gmail.com',
+        password: 'NexosAdmin2026!',
+        role: 'Administrador do Sistema',
+        assignmentCity: 'Lajeado',
+        lastLogin: 'Nunca (Acesso Inicial)',
+        status: 'active'
+      });
+      fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+    }
+    return db;
   } catch (error) {
     console.error('Erro ao ler database.json, usando modelo limpo:', error);
     return cleanDbTemplate;

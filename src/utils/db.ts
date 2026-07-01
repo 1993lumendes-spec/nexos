@@ -21,33 +21,61 @@ const DB_KEY = 'nexos_db_producao_v3';
 export const loadDatabase = (): NexosDatabase => {
   try {
     const data = localStorage.getItem(DB_KEY);
+    let db: NexosDatabase;
     if (!data) {
-      // Inicia 100% limpo, sem carregar dados fictícios por padrão
-      const cleanDb: NexosDatabase = {
+      // Inicia limpo, mas com o administrador mestre pré-semeado
+      db = {
         gangs: [],
         suspects: [],
         crimes: [],
         users: [],
         vehicles: []
       };
-      saveDatabase(cleanDb);
-      return cleanDb;
+    } else {
+      const parsed = JSON.parse(data);
+      db = {
+        gangs: parsed.gangs || [],
+        suspects: parsed.suspects || [],
+        crimes: parsed.crimes || [],
+        users: parsed.users || [],
+        vehicles: parsed.vehicles || []
+      };
     }
-    const parsed = JSON.parse(data);
-    return {
-      gangs: parsed.gangs || [],
-      suspects: parsed.suspects || [],
-      crimes: parsed.crimes || [],
-      users: parsed.users || [],
-      vehicles: parsed.vehicles || []
-    };
+
+    // Auto-semeia o usuário administrador se não existir no LocalStorage
+    const hasAdmin = db.users.some(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
+    if (!hasAdmin) {
+      db.users.push({
+        id: 'user-admin',
+        name: 'Administrador Nexos',
+        email: '1993lumendes@gmail.com',
+        password: 'NexosAdmin2026!',
+        role: 'Administrador do Sistema',
+        assignmentCity: 'Lajeado',
+        lastLogin: 'Nunca (Acesso Inicial)',
+        status: 'active'
+      });
+      saveDatabase(db);
+    }
+    return db;
   } catch (error) {
     console.error('Erro ao carregar o banco de dados do LocalStorage:', error);
     return {
       gangs: [],
       suspects: [],
       crimes: [],
-      users: [],
+      users: [
+        {
+          id: 'user-admin',
+          name: 'Administrador Nexos',
+          email: '1993lumendes@gmail.com',
+          password: 'NexosAdmin2026!',
+          role: 'Administrador do Sistema',
+          assignmentCity: 'Lajeado',
+          lastLogin: 'Nunca (Acesso Inicial)',
+          status: 'active'
+        }
+      ],
       vehicles: []
     };
   }
