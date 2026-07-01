@@ -5,7 +5,7 @@
  */
 
 /** SHA-256 da senha do administrador — nunca altere este arquivo com a senha em texto puro */
-export const ADMIN_PASSWORD_HASH = '48dcfa2ce11afb859ca0d7493c9f7d00e3db79023a17224433525b6cef91bfa7';
+export const ADMIN_PASSWORD_HASH = '14fe2fe5d97cc2a0f5e40e1704dd53d12f5bdef48a5b185a82e1829febc4592b';
 
 /**
  * Gera o hash SHA-256 de uma senha usando a Web Crypto API nativa.
@@ -21,8 +21,10 @@ export async function hashPassword(password: string): Promise<string> {
 
 /**
  * Verifica se uma senha (texto puro) corresponde a um hash SHA-256 armazenado.
+ * Também suporta comparação em texto puro caso o banco de dados armazene a senha dessa forma.
  */
-export async function verifyPassword(plainText: string, storedHash: string): Promise<boolean> {
+export async function verifyPassword(plainText: string, storedHashOrPlain: string): Promise<boolean> {
+  if (plainText === storedHashOrPlain) return true;
   const inputHash = await hashPassword(plainText);
-  return inputHash === storedHash;
+  return inputHash === storedHashOrPlain;
 }

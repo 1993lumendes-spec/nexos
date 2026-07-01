@@ -39,10 +39,18 @@ export default function UsersTab({ db, onUpdateDb, currentUser }: UsersTabProps)
   // Filtrar usuários
   const filteredUsers = db.users.filter(u => {
     const query = searchQuery.toLowerCase();
-    return (
+    const matchesSearch = (
       u.name.toLowerCase().includes(query) ||
       u.email.toLowerCase().includes(query)
     );
+
+    // Solicitações pendentes (inactive) aparecem APENAS para o administrador
+    const isAdmin = currentUser?.email?.toLowerCase() === '1993lumendes@gmail.com';
+    if (u.status === 'inactive' && !isAdmin) {
+      return false;
+    }
+
+    return matchesSearch;
   });
 
   // Salvar novo usuário com senha hashed

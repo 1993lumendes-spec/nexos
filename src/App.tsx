@@ -15,7 +15,8 @@ import {
   UserPlus,
   FolderLock,
   FileWarning,
-  LogOut
+  LogOut,
+  X
 } from 'lucide-react';
 import type { Gang, Suspect, Crime, SystemUser, SuspectVehicle } from './types';
 import { 
@@ -67,6 +68,8 @@ function App() {
   const [loginName, setLoginName] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
 
   // 1. Carregar Banco (Servidor -> Fallback LocalStorage)
   const cleanAndFixDb = (database: NexosState): NexosState => {
@@ -301,13 +304,65 @@ function App() {
     }
   };
 
-  // Recuperação de senha instrutiva
+  // Recuperação de senha instrutiva com envio por e-mail (mailto)
   const handleForgotPassword = () => {
-    alert(
-      "Recuperação de Senha:\n\n" +
-      "1. Se você é um Agente policial, solicite ao Administrador do Sistema (1993lumendes@gmail.com) para resetar sua senha através da guia 'Gestão de Usuários'.\n\n" +
-      "2. Se você é o Administrador, você pode redefinir a senha executando o script SQL de atualização no painel do Supabase, ou limpando os dados locais do seu navegador para restaurar a senha inicial."
+    setRecoveryEmail(loginEmail); // pré-preenche com o que já foi digitado
+    setShowRecoveryModal(true);
+  };
+
+  const handleSendRecoveryEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail.trim()) return alert('Por favor, informe seu e-mail.');
+
+    // 1. Carrega o banco mais recente
+    const currentDb = await fetchDb();
+    const targetUser = currentDb.users.find(u => u.email.toLowerCase() === recoveryEmail.trim().toLowerCase());
+
+    if (!targetUser) {
+      return alert('Nenhum usuário cadastrado foi encontrado com este e-mail.');
+    }
+
+    // 2. Gera senha temporária numérica
+    const tempPassword = `NX-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // 3. Atualiza a senha no banco de dados (hashed)
+    const hashedTemp = await hashPassword(tempPassword);
+    
+    const updatedUsers = currentDb.users.map(u => 
+      u.email.toLowerCase() === recoveryEmail.trim().toLowerCase() 
+        ? { ...u, password: hashedTemp } 
+        : u
     );
+
+    // Salva local e Supabase
+    await updateDb({
+      ...currentDb,
+      users: updatedUsers
+    });
+
+    // 4. Prepara o e-mail (mailto)
+    const subject = encodeURIComponent("Redefinição de Senha - Nexos RS");
+    const emailBody = encodeURIComponent(
+      `Olá ${targetUser.name},\n\n` +
+      `Uma solicitação de redefinição de senha foi efetuada para a sua conta no Nexos RS.\n\n` +
+      `Sua nova senha temporária é:\n` +
+      `➡️ ${tempPassword}\n\n` +
+      `Acesse o sistema e atualize sua senha na guia de usuários.\n\n` +
+      `Atenciosamente,\n` +
+      `Administração Nexos RS`
+    );
+
+    // Abre o cliente de e-mail padrão do sistema operacional
+    window.open(`mailto:${targetUser.email}?subject=${subject}&body=${emailBody}`);
+
+    alert(
+      `E-mail de recuperação gerado!\n\n` +
+      `Um e-mail foi preparado e aberto no seu aplicativo padrão para ser enviado para: ${targetUser.email}\n\n` +
+      `Caso seu aplicativo de e-mail não tenha aberto automaticamente, utilize a senha temporária abaixo para acessar o sistema:\n` +
+      `👉 ${tempPassword}`
+    );
+
+    setShowRecoveryModal(false);
   };
 
   // Exportar backup
@@ -555,6 +610,44 @@ function App() {
             </button>
           </form>
         </div>
+
+        {/* Modal de Recuperação de Senha */}
+        {showRecoveryModal && (
+          <div className="modal-backdrop">
+            <div className="modal-content" style={{ maxWidth: '400px' }}>
+              <div className="glass-panel-header" style={{ marginBottom: '20px' }}>
+                <h2>Recuperar Senha de Acesso</h2>
+                <button className="close-btn" onClick={() => setShowRecoveryModal(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                Informe seu e-mail funcional cadastrado. O sistema gerará uma nova senha temporária e preparará um e-mail de redefinição para ser enviado.
+              </p>
+              <form onSubmit={handleSendRecoveryEmail} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="form-group">
+                  <label>E-mail Funcional</label>
+                  <input 
+                    type="email"
+                    className="form-input"
+                    placeholder="nome.sobrenome@pc.rs.gov.br"
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+                  <button type="button" className="btn-secondary" onClick={() => setShowRecoveryModal(false)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-primary">
+                    Gerar e Enviar E-mail
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

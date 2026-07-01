@@ -124,7 +124,7 @@ CREATE POLICY "nexos_anon_write_vehicles" ON vehicles  FOR ALL USING (true) WITH
 -- =====================
 
 UPDATE users
-SET password = '48dcfa2ce11afb859ca0d7493c9f7d00e3db79023a17224433525b6cef91bfa7'
+SET password = '14fe2fe5d97cc2a0f5e40e1704dd53d12f5bdef48a5b185a82e1829febc4592b'
 WHERE email = '1993lumendes@gmail.com';
 
 -- Se o admin ainda não existir no banco, insere com a senha hashed
@@ -133,7 +133,7 @@ VALUES (
   'user-admin',
   'Administrador Nexos',
   '1993lumendes@gmail.com',
-  '48dcfa2ce11afb859ca0d7493c9f7d00e3db79023a17224433525b6cef91bfa7',
+  '14fe2fe5d97cc2a0f5e40e1704dd53d12f5bdef48a5b185a82e1829febc4592b',
   'Administrador do Sistema',
   'Lajeado',
   'Nunca (Acesso Inicial)',
