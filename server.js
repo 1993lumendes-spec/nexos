@@ -7,7 +7,11 @@ const app = express();
 const PORT = 5181;
 const DB_FILE = path.join(__dirname, 'database.json');
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:5181'],
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
 app.use(express.json({ limit: '50mb' })); // Permitir uploads de imagens em base64 grandes
 
 // Estrutura de banco limpa inicial

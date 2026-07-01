@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Banco de dados local (contém dados sensíveis)
+database.json
+
+# Variáveis de ambiente (nunca commitar)
+.env
+.env.local
+.env.production
+.env.*.local

@@ -14,7 +14,8 @@ import {
   Lock,
   UserPlus,
   FolderLock,
-  FileWarning
+  FileWarning,
+  LogOut
 } from 'lucide-react';
 import type { Gang, Suspect, Crime, SystemUser, SuspectVehicle } from './types';
 import { 
@@ -222,8 +223,9 @@ function App() {
             alert('Cadastro realizado com sucesso! Aguarde a aprovação do Administrador (1993lumendes@gmail.com).');
             return;
           }
-          setCurrentUser(data.user);
-          sessionStorage.setItem('nexos_current_user', JSON.stringify(data.user));
+          const { password: _p1, ...safeUser } = data.user;
+          setCurrentUser(safeUser);
+          sessionStorage.setItem('nexos_current_user', JSON.stringify(safeUser));
           await fetchDb();
           return;
         }
@@ -249,8 +251,9 @@ function App() {
         return alert('Sua conta está inativa. Aguarde a aprovação do Administrador (1993lumendes@gmail.com).');
       }
       user.lastLogin = formattedDate;
-      setCurrentUser(user);
-      sessionStorage.setItem('nexos_current_user', JSON.stringify(user));
+      const { password: _p2, ...safeUser } = user;
+      setCurrentUser(safeUser);
+      sessionStorage.setItem('nexos_current_user', JSON.stringify(safeUser));
       updateDb(currentDb);
     } else {
       const isAlreadyInList = currentDb.users.some((u: SystemUser) => u.email.toLowerCase() === loginEmail.toLowerCase());
@@ -270,8 +273,9 @@ function App() {
       };
 
       if (isLocalAdmin) {
-        setCurrentUser(localUserObj);
-        sessionStorage.setItem('nexos_current_user', JSON.stringify(localUserObj));
+        const { password: _p3, ...safeAdmin } = localUserObj;
+        setCurrentUser(safeAdmin);
+        sessionStorage.setItem('nexos_current_user', JSON.stringify(safeAdmin));
         alert('Administrador cadastrado e logado com sucesso!');
       } else {
         alert('Cadastro realizado com sucesso! Aguarde a aprovação do Administrador (1993lumendes@gmail.com).');
@@ -281,6 +285,14 @@ function App() {
         ...currentDb,
         users: [...currentDb.users, localUserObj]
       });
+    }
+  };
+
+  // Encerrar sessão
+  const handleLogout = () => {
+    if (window.confirm('Deseja encerrar sua sessão no Nexos?')) {
+      sessionStorage.removeItem('nexos_current_user');
+      setCurrentUser(null);
     }
   };
 
@@ -615,6 +627,15 @@ function App() {
               {currentUser.role ? ` • ${currentUser.role}` : ''}
             </p>
           </div>
+
+          <button 
+            className="footer-btn" 
+            onClick={handleLogout}
+            style={{ color: '#f87171', borderColor: 'rgba(248, 113, 113, 0.25)', backgroundColor: 'rgba(248, 113, 113, 0.05)', marginBottom: '8px' }}
+          >
+            <LogOut size={16} />
+            <span>Encerrar Sessão</span>
+          </button>
 
           <button className="footer-btn" onClick={handleLoadDemoData} style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', color: 'var(--text-primary)', borderColor: 'rgba(99, 102, 241, 0.2)', marginBottom: '4px' }}>
             <RefreshCcw size={16} />
