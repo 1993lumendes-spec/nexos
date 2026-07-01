@@ -19,6 +19,7 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   // Estados para formulário
   const [formId, setFormId] = useState('');
@@ -163,6 +164,13 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
 
   return (
     <div className="tab-container">
+      <style>{`
+        .vehicle-thumbnail-hover:hover {
+          transform: scale(1.06);
+          border-color: var(--accent) !important;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+        }
+      `}</style>
       {/* Busca e Cadastro */}
       <div className="search-bar-row">
         <div className="search-input-wrapper">
@@ -264,18 +272,22 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
                             src={veh.photo} 
                             alt={veh.brandModel} 
                             style={{ 
-                              width: '46px', 
-                              height: '46px', 
+                              width: '85px', 
+                              height: '56px', 
                               borderRadius: '6px', 
                               objectFit: 'cover', 
                               border: '1.5px solid var(--border-color)',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.2)' 
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                              cursor: 'pointer',
+                              transition: 'transform 0.2s ease, border-color 0.2s ease'
                             }}
+                            className="vehicle-thumbnail-hover"
+                            onClick={() => setPreviewPhoto(veh.photo || null)}
                           />
                         ) : (
                           <div style={{ 
-                            width: '46px', 
-                            height: '46px', 
+                            width: '85px', 
+                            height: '56px', 
                             borderRadius: '6px', 
                             backgroundColor: 'rgba(255,255,255,0.03)', 
                             border: '1.5px dashed var(--border-color)', 
@@ -538,6 +550,37 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Ampliação de Foto do Veículo */}
+      {previewPhoto && (
+        <div className="modal-backdrop" onClick={() => setPreviewPhoto(null)} style={{ zIndex: 1100 }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px', padding: '12px', border: '1px solid var(--border-color)' }}>
+            <div className="glass-panel-header" style={{ marginBottom: '12px' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Car size={18} className="text-accent" />
+                Visualização Ampliada
+              </h3>
+              <button className="close-btn" onClick={() => setPreviewPhoto(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <img 
+              src={previewPhoto} 
+              alt="Veículo ampliado" 
+              style={{ 
+                width: '100%', 
+                maxHeight: '450px', 
+                borderRadius: '6px', 
+                objectFit: 'contain', 
+                display: 'block', 
+                margin: 'auto', 
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid var(--border-color)'
+              }}
+            />
           </div>
         </div>
       )}
