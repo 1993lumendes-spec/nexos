@@ -29,6 +29,7 @@ import {
   saveDatabaseToSupabase 
 } from './utils/db';
 import { hashPassword, verifyPassword } from './utils/auth';
+import { isSupabaseConfigured } from './utils/supabaseClient';
 
 
 // Importando componentes das abas
@@ -793,9 +794,19 @@ function App() {
           <div className="top-bar-title">
             <h1>{getTabTitle()}</h1>
           </div>
-          <div className="badge-status">
-            <div className="w-2 h-2 rounded-full bg-success"></div>
-            <span>BCO RESTREITO • RS</span>
+          <div className="badge-status" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)' }}>
+            <div 
+              style={{ 
+                backgroundColor: isSupabaseConfigured() ? '#10b981' : '#f59e0b',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                boxShadow: isSupabaseConfigured() ? '0 0 8px #10b981' : '0 0 8px #f59e0b'
+              }}
+            ></div>
+            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              {isSupabaseConfigured() ? 'NUVEM • SUPABASE' : 'MODO LOCAL • LOCALSTORAGE'}
+            </span>
           </div>
         </header>
 
