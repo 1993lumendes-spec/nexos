@@ -67,4 +67,5 @@ export interface SuspectVehicle {
   gangId: string;        // ID da quadrilha vinculada (pode ser "")
   suspectId: string;     // ID do suspeito associado (pode ser "")
   description: string;   // Observações adicionais
+  photo?: string;        // Foto do veículo (Base64 ou URL)
 }

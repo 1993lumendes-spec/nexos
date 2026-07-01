@@ -28,6 +28,7 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
   const [formGangId, setFormGangId] = useState('');
   const [formSuspectId, setFormSuspectId] = useState('');
   const [formDescription, setFormDescription] = useState('');
+  const [formPhoto, setFormPhoto] = useState('');
 
   // Filtrar veículos
   const filteredVehicles = db.vehicles.filter(v => {
@@ -54,6 +55,7 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
     setFormGangId('');
     setFormSuspectId('');
     setFormDescription('');
+    setFormPhoto('');
     setIsModalOpen(true);
   };
 
@@ -67,6 +69,7 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
     setFormGangId(veh.gangId);
     setFormSuspectId(veh.suspectId);
     setFormDescription(veh.description);
+    setFormPhoto(veh.photo || '');
     setIsModalOpen(true);
   };
 
@@ -90,7 +93,8 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
         color: formColor,
         gangId: formGangId,
         suspectId: formSuspectId,
-        description: formDescription
+        description: formDescription,
+        photo: formPhoto
       };
       updatedVehicles.push(newVeh);
     } else {
@@ -103,7 +107,8 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
             color: formColor,
             gangId: formGangId,
             suspectId: formSuspectId,
-            description: formDescription
+            description: formDescription,
+            photo: formPhoto
           };
         }
         return v;
@@ -127,6 +132,19 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
         vehicles: db.vehicles.filter(v => v.id !== vehId)
       });
     }
+  };
+
+  // Upload da foto do veículo em base64
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const base64 = uploadEvent.target?.result as string;
+      setFormPhoto(base64);
+    };
+    reader.readAsDataURL(file);
   };
 
   // Formatar placa para exibição (Coloca o traço se for padrão antigo de 7 dígitos e 3 letras)
@@ -195,44 +213,83 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
                 return (
                   <tr key={veh.id}>
                     <td>
-                      {/* Estilo Placa Mercosul */}
+                      {/* Estilo Placa Mercosul Realista */}
                       <div style={{
                         display: 'inline-flex',
                         flexDirection: 'column',
-                        border: '2.5px solid #1e293b',
-                        borderRadius: '6px',
-                        backgroundColor: '#f8fafc',
-                        color: '#0f172a',
+                        border: '2px solid #1e293b',
+                        borderRadius: '5px',
+                        backgroundColor: '#ffffff',
+                        color: '#000000',
                         fontFamily: '"Impact", "Arial Black", sans-serif',
                         fontWeight: 'bold',
                         overflow: 'hidden',
-                        width: '100px',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                        userSelect: 'none'
+                        width: '115px',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.4)',
+                        userSelect: 'none',
+                        borderCollapse: 'separate'
                       }}>
                         <div style={{
                           backgroundColor: '#002f6c', // Azul Mercosul
-                          height: '8px',
+                          height: '14px',
                           width: '100%',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center'
-                        }}></div>
+                          justifyContent: 'center',
+                          fontSize: '0.55rem',
+                          color: '#ffffff',
+                          fontFamily: 'sans-serif',
+                          fontWeight: 'bold',
+                          letterSpacing: '0.08em',
+                          textShadow: '0 1px 1px rgba(0,0,0,0.5)'
+                        }}>
+                          BRASIL
+                        </div>
                         <div style={{
-                          fontSize: '1rem',
+                          fontSize: '1.2rem',
                           textAlign: 'center',
-                          padding: '1px 4px',
-                          letterSpacing: '0.04em',
-                          lineHeight: '1.2'
+                          padding: '2px 0',
+                          letterSpacing: '0.06em',
+                          lineHeight: '1.1',
+                          textTransform: 'uppercase'
                         }}>
                           {plateText}
                         </div>
                       </div>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: 600 }}>{veh.brandModel}</span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Cor: {veh.color || 'Não informada'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {veh.photo ? (
+                          <img 
+                            src={veh.photo} 
+                            alt={veh.brandModel} 
+                            style={{ 
+                              width: '46px', 
+                              height: '46px', 
+                              borderRadius: '6px', 
+                              objectFit: 'cover', 
+                              border: '1.5px solid var(--border-color)',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.2)' 
+                            }}
+                          />
+                        ) : (
+                          <div style={{ 
+                            width: '46px', 
+                            height: '46px', 
+                            borderRadius: '6px', 
+                            backgroundColor: 'rgba(255,255,255,0.03)', 
+                            border: '1.5px dashed var(--border-color)', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center' 
+                          }}>
+                            <Car size={18} className="text-muted" />
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{veh.brandModel}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Cor: {veh.color || 'Não informada'}</span>
+                        </div>
                       </div>
                     </td>
                     <td>
@@ -399,6 +456,65 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
                       <option key={s.id} value={s.id}>{s.name} {s.aliases ? `("${s.aliases}")` : ''}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Foto do Veículo (Opcional)</label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  {formPhoto ? (
+                    <div style={{ position: 'relative', width: '64px', height: '64px', flexShrink: 0 }}>
+                      <img 
+                        src={formPhoto} 
+                        alt="Preview do veículo" 
+                        style={{ width: '100%', height: '100%', borderRadius: '6px', objectFit: 'cover', border: '1.5px solid var(--border-color)' }}
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setFormPhoto('')}
+                        style={{ 
+                          position: 'absolute', 
+                          top: '-6px', 
+                          right: '-6px', 
+                          backgroundColor: '#ef4444', 
+                          color: '#fff', 
+                          border: 'none', 
+                          borderRadius: '50%', 
+                          width: '18px', 
+                          height: '18px', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          cursor: 'pointer', 
+                          fontSize: '9px',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      width: '64px', 
+                      height: '64px', 
+                      borderRadius: '6px', 
+                      backgroundColor: 'rgba(255,255,255,0.02)', 
+                      border: '1.5px dashed var(--border-color)', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <Car size={20} className="text-muted" />
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="form-input"
+                    style={{ flex: 1 }}
+                  />
                 </div>
               </div>
 

@@ -12,7 +12,8 @@ export const CITIES_RS: Record<string, CityLocation> = {
   'Cruz Alta': { name: 'Cruz Alta', coordinates: [-28.6386, -53.6067] },
   'Novo Hamburgo': { name: 'Novo Hamburgo', coordinates: [-29.6844, -51.1311] },
   'Uruguaiana': { name: 'Uruguaiana', coordinates: [-29.7547, -57.0861] },
-  'Santa Cruz do Sul': { name: 'Santa Cruz do Sul', coordinates: [-29.7178, -52.4258] }
+  'Santa Cruz do Sul': { name: 'Santa Cruz do Sul', coordinates: [-29.7178, -52.4258] },
+  'Cachoeira do Sul': { name: 'Cachoeira do Sul', coordinates: [-30.0391, -52.8978] }
 };
 
 export const getCityCoords = (cityName: string): [number, number] => {
