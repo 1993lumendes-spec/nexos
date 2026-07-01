@@ -125,7 +125,7 @@ export default function RoutesMapTab({ db }: RoutesMapTabProps) {
 
     // Para cada quadrilha, desenha a sua origem e as suas rotas
     gangsToDraw.forEach(gang => {
-      const originCoords = getCityCoords(gang.originCity);
+      const originCoords = getCityCoords(gang.originCity || '');
 
       // Desenha o marcador de Origem (Apenas se ainda não desenhado para essa quadrilha)
       if (!renderedOrigins.has(`${gang.id}-${gang.originCity}`)) {
@@ -155,7 +155,7 @@ export default function RoutesMapTab({ db }: RoutesMapTabProps) {
       const gangCrimes = activeCrimes.filter(c => c.gangId === gang.id);
 
       gangCrimes.forEach(crime => {
-        const targetCoords = crime.coordinates;
+        const targetCoords = crime.coordinates && crime.coordinates.length >= 2 ? crime.coordinates : getCityCoords(crime.city);
 
         // 1. Desenha a linha de rota (Origem -> Destino do Crime)
         const polyline = L.polyline([originCoords, targetCoords], {

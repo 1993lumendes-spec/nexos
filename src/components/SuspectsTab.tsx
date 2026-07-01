@@ -13,6 +13,27 @@ import {
 } from 'lucide-react';
 import type { Gang, Suspect, Crime, SystemUser, SuspectVehicle } from '../types';
 
+const DEFAULT_CRIME_TYPES = [
+  'Furto',
+  'Furto Qualificado',
+  'Roubo',
+  'Roubo Majorado',
+  'Tráfico de Drogas',
+  'Associação para o Tráfico',
+  'Receptação',
+  'Homicídio',
+  'Tentativa de Homicídio',
+  'Porte Ilegal de Arma de Fogo',
+  'Posse de Arma de Fogo',
+  'Associação Criminosa',
+  'Estelionato',
+  'Corrupção de Menores',
+  'Lesão Corporal',
+  'Ameaça',
+  'Desobediência',
+  'Resistência'
+];
+
 interface NexosState {
   gangs: Gang[];
   suspects: Suspect[];
@@ -41,6 +62,10 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
   
   // Estado para ocorrências selecionadas no modal
   const [formCrimes, setFormCrimes] = useState<string[]>([]);
+  
+  // Estados para o seletor de crimes rápidos nos antecedentes
+  const [selectedRecordCrime, setSelectedRecordCrime] = useState('');
+  const [recordCrimeQty, setRecordCrimeQty] = useState('');
   
   // Estados para formulário de cadastro/edição
   const [formId, setFormId] = useState('');
@@ -104,6 +129,25 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
     return matchesSearch && matchesStatus && matchesGang && matchesCrime && matchesCity;
   });
 
+  const getSuggestedCrimes = () => {
+    const list = new Set(DEFAULT_CRIME_TYPES);
+    
+    // Extrai crimes já cadastrados nos antecedentes dos suspeitos
+    db.suspects.forEach(s => {
+      if (!s.criminalRecord) return;
+      const lines = s.criminalRecord.split('\n');
+      lines.forEach(line => {
+        let clean = line.replace(/^[-*•\s]+/, '').trim();
+        clean = clean.replace(/\s*[-–]?\s*\d+\s*x\s*$/i, '').trim();
+        if (clean && clean.length > 2 && clean.length < 50) {
+          list.add(clean);
+        }
+      });
+    });
+    
+    return Array.from(list).sort();
+  };
+
   // Abrir modal para novo cadastro
   const handleOpenCreateModal = () => {
     setModalMode('create');
@@ -117,6 +161,8 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
     setFormStatus('active');
     setFormBirthDate('');
     setFormCrimes([]);
+    setSelectedRecordCrime('');
+    setRecordCrimeQty('');
     setIsModalOpen(true);
   };
 
@@ -138,6 +184,8 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
       .filter(c => c.suspectsInvolved.includes(suspect.id))
       .map(c => c.id);
     setFormCrimes(linkedCrimes);
+    setSelectedRecordCrime('');
+    setRecordCrimeQty('');
     
     setIsModalOpen(true);
   };
@@ -792,11 +840,67 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
 
               <div className="form-group">
                 <label>Antecedentes Criminais (Resumo Policial)</label>
+                
+                {/* Seletor rápido de crimes */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1', minWidth: '200px' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Selecionar/Digitar Antecedente</span>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      placeholder="Selecione ou digite um crime..."
+                      list="antecedentes-crimes-sugeridos"
+                      value={selectedRecordCrime}
+                      onChange={(e) => setSelectedRecordCrime(e.target.value)}
+                    />
+                    <datalist id="antecedentes-crimes-sugeridos">
+                      {getSuggestedCrimes().map(c => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div style={{ width: '85px' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Qtd. (Opcional)</span>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      placeholder="Ex: 5x"
+                      value={recordCrimeQty}
+                      onChange={(e) => setRecordCrimeQty(e.target.value)}
+                    />
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-primary" 
+                    style={{ height: '38px', padding: '0 16px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
+                    onClick={() => {
+                      if (!selectedRecordCrime.trim()) return alert('Selecione ou digite um crime para adicionar!');
+                      
+                      const qtySuffix = recordCrimeQty.trim() 
+                        ? ` - ${recordCrimeQty.trim().toLowerCase().endsWith('x') ? recordCrimeQty.trim() : recordCrimeQty.trim() + 'x'}`
+                        : '';
+                      const formattedLine = `- ${selectedRecordCrime.trim()}${qtySuffix}`;
+                      
+                      if (formCriminalRecord.trim()) {
+                        setFormCriminalRecord(formCriminalRecord.trim() + '\n' + formattedLine);
+                      } else {
+                        setFormCriminalRecord(formattedLine);
+                      }
+                      
+                      setSelectedRecordCrime('');
+                      setRecordCrimeQty('');
+                    }}
+                  >
+                    + Adicionar
+                  </button>
+                </div>
+
                 <textarea 
                   className="form-textarea"
                   placeholder="Liste passagens, inquéritos e condenações principais..."
                   value={formCriminalRecord}
                   onChange={(e) => setFormCriminalRecord(e.target.value)}
+                  style={{ minHeight: '120px' }}
                 />
               </div>
 

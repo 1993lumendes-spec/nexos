@@ -72,7 +72,7 @@ function App() {
     let changed = false;
     const updatedCrimes = database.crimes.map(crime => {
       const normalizedCity = crime.city.trim().toLowerCase();
-      if (normalizedCity === 'lajeado' && crime.coordinates[0] === -29.8 && crime.coordinates[1] === -52.5) {
+      if (crime.coordinates && crime.coordinates.length >= 2 && normalizedCity === 'lajeado' && crime.coordinates[0] === -29.8 && crime.coordinates[1] === -52.5) {
         changed = true;
         return {
           ...crime,
@@ -146,7 +146,7 @@ function App() {
     
     // 1. Tenta salvar no Supabase
     try {
-      const success = await saveDatabaseToSupabase(newDb);
+      const success = await saveDatabaseToSupabase(newDb, db);
       if (success) return;
     } catch (err) {
       console.warn('Erro ao salvar no Supabase. Tentando Express Server...');

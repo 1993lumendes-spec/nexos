@@ -200,60 +200,73 @@ export const loadDatabaseFromSupabase = async (): Promise<NexosDatabase | null> 
   }
 };
 
-export const saveDatabaseToSupabase = async (db: NexosDatabase): Promise<boolean> => {
+const getDeletedIds = (oldList: { id: string }[], newList: { id: string }[]): string[] => {
+  const newIds = new Set(newList.map(item => item.id));
+  return oldList.filter(item => !newIds.has(item.id)).map(item => item.id);
+};
+
+export const saveDatabaseToSupabase = async (db: NexosDatabase, oldDb?: NexosDatabase): Promise<boolean> => {
   if (!isSupabaseConfigured()) return false;
   
   try {
-    // Sincroniza tabelas uma a uma
-    
-    // 1. Gangs
+    // 1. Sincroniza Gangs
     if (db.gangs.length > 0) {
       const { error } = await supabase!.from('gangs').upsert(db.gangs);
       if (error) throw error;
-      const gangIds = db.gangs.map(g => g.id);
-      await supabase!.from('gangs').delete().not('id', 'in', `(${gangIds.join(',')})`);
-    } else {
-      await supabase!.from('gangs').delete().neq('id', '');
+    }
+    if (oldDb) {
+      const deletedGangs = getDeletedIds(oldDb.gangs, db.gangs);
+      if (deletedGangs.length > 0) {
+        await supabase!.from('gangs').delete().in('id', deletedGangs);
+      }
     }
     
-    // 2. Suspects
+    // 2. Sincroniza Suspects
     if (db.suspects.length > 0) {
       const { error } = await supabase!.from('suspects').upsert(db.suspects);
       if (error) throw error;
-      const suspectIds = db.suspects.map(s => s.id);
-      await supabase!.from('suspects').delete().not('id', 'in', `(${suspectIds.join(',')})`);
-    } else {
-      await supabase!.from('suspects').delete().neq('id', '');
+    }
+    if (oldDb) {
+      const deletedSuspects = getDeletedIds(oldDb.suspects, db.suspects);
+      if (deletedSuspects.length > 0) {
+        await supabase!.from('suspects').delete().in('id', deletedSuspects);
+      }
     }
     
-    // 3. Crimes
+    // 3. Sincroniza Crimes
     if (db.crimes.length > 0) {
       const { error } = await supabase!.from('crimes').upsert(db.crimes);
       if (error) throw error;
-      const crimeIds = db.crimes.map(c => c.id);
-      await supabase!.from('crimes').delete().not('id', 'in', `(${crimeIds.join(',')})`);
-    } else {
-      await supabase!.from('crimes').delete().neq('id', '');
+    }
+    if (oldDb) {
+      const deletedCrimes = getDeletedIds(oldDb.crimes, db.crimes);
+      if (deletedCrimes.length > 0) {
+        await supabase!.from('crimes').delete().in('id', deletedCrimes);
+      }
     }
     
-    // 4. Users
+    // 4. Sincroniza Users
     if (db.users.length > 0) {
       const { error } = await supabase!.from('users').upsert(db.users);
       if (error) throw error;
-      const userIds = db.users.map(u => u.id);
-      await supabase!.from('users').delete().not('id', 'in', `(${userIds.join(',')})`);
-    } else {
-      await supabase!.from('users').delete().neq('id', '');
+    }
+    if (oldDb) {
+      const deletedUsers = getDeletedIds(oldDb.users, db.users);
+      if (deletedUsers.length > 0) {
+        await supabase!.from('users').delete().in('id', deletedUsers);
+      }
     }
     
-    // 5. Vehicles
+    // 5. Sincroniza Vehicles
     if (db.vehicles.length > 0) {
       const { error } = await supabase!.from('vehicles').upsert(db.vehicles);
       if (error) throw error;
-      const vehicleIds = db.vehicles.map(v => v.id);
-      await supabase!.from('vehicles').delete().not('id', 'in', `(${vehicleIds.join(',')})`);
-    } else {
-      await supabase!.from('vehicles').delete().neq('id', '');
+    }
+    if (oldDb) {
+      const deletedVehicles = getDeletedIds(oldDb.vehicles, db.vehicles);
+      if (deletedVehicles.length > 0) {
+        await supabase!.from('vehicles').delete().in('id', deletedVehicles);
+      }
     }
     
     return true;

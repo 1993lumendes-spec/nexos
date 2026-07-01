@@ -157,7 +157,8 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
         </div>
       `;
 
-      const marker = L.circleMarker(crime.coordinates, {
+      const coords = crime.coordinates && crime.coordinates.length >= 2 ? crime.coordinates : getCityCoords(crime.city);
+      const marker = L.circleMarker(coords, {
         radius: 9,
         fillColor: gangColorColor,
         color: '#ffffff',
@@ -579,7 +580,8 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
                               onClick={() => {
                                 const idx = db.crimes.findIndex(c => c.id === crime.id);
                                 if (idx !== -1 && markersRef.current[idx] && mapInstanceRef.current) {
-                                  mapInstanceRef.current.setView(crime.coordinates, 10);
+                                  const coords = crime.coordinates && crime.coordinates.length >= 2 ? crime.coordinates : getCityCoords(crime.city);
+                                  mapInstanceRef.current.setView(coords, 10);
                                   markersRef.current[idx].openPopup();
                                 }
                               }}
