@@ -22,7 +22,9 @@ import {
   saveDatabase, 
   exportDatabaseToJson, 
   importDatabaseFromJson,
-  getDemoDatabase 
+  getDemoDatabase,
+  loadDatabaseFromSupabase,
+  saveDatabaseToSupabase 
 } from './utils/db';
 
 
@@ -83,6 +85,22 @@ function App() {
   };
 
   const fetchDb = async () => {
+    // 1. Tenta carregar do Supabase
+    try {
+      const supabaseDb = await loadDatabaseFromSupabase();
+      if (supabaseDb) {
+        const cleanedDb = cleanAndFixDb(supabaseDb);
+        setDb(cleanedDb);
+        if (cleanedDb !== supabaseDb) {
+          saveDatabaseToSupabase(cleanedDb).catch(console.error);
+        }
+        return cleanedDb;
+      }
+    } catch (err) {
+      console.warn('Supabase offline ou não configurado. Tentando Express Server...');
+    }
+
+    // 2. Fallback para Express Server local
     try {
       const res = await fetch('/api/db');
       if (res.ok) {
@@ -102,7 +120,7 @@ function App() {
       console.warn('Servidor local offline, usando LocalStorage como fallback.');
     }
     
-    // Fallback
+    // 3. Fallback final para LocalStorage
     const localData = loadDatabase();
     const cleanedDb = cleanAndFixDb(localData);
     setDb(cleanedDb);
@@ -126,6 +144,15 @@ function App() {
   const updateDb = async (newDb: NexosState) => {
     setDb(newDb);
     
+    // 1. Tenta salvar no Supabase
+    try {
+      const success = await saveDatabaseToSupabase(newDb);
+      if (success) return;
+    } catch (err) {
+      console.warn('Erro ao salvar no Supabase. Tentando Express Server...');
+    }
+
+    // 2. Tenta salvar no Express Server local
     try {
       const res = await fetch('/api/db', {
         method: 'POST',
@@ -137,6 +164,7 @@ function App() {
       console.warn('Servidor offline ao salvar, usando LocalStorage como backup.');
     }
 
+    // 3. Fallback final para LocalStorage
     saveDatabase(newDb);
   };
 

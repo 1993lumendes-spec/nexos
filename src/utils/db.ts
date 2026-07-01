@@ -6,6 +6,7 @@ import {
   MOCK_USERS, 
   MOCK_VEHICLES 
 } from './mockData';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export interface NexosDatabase {
   gangs: Gang[];
@@ -148,3 +149,117 @@ export const importDatabaseFromJson = (
   };
   reader.readAsText(file);
 };
+
+export const loadDatabaseFromSupabase = async (): Promise<NexosDatabase | null> => {
+  if (!isSupabaseConfigured()) return null;
+  
+  try {
+    const [gangsRes, suspectsRes, crimesRes, usersRes, vehiclesRes] = await Promise.all([
+      supabase!.from('gangs').select('*'),
+      supabase!.from('suspects').select('*'),
+      supabase!.from('crimes').select('*'),
+      supabase!.from('users').select('*'),
+      supabase!.from('vehicles').select('*')
+    ]);
+    
+    if (gangsRes.error) throw gangsRes.error;
+    if (suspectsRes.error) throw suspectsRes.error;
+    if (crimesRes.error) throw crimesRes.error;
+    if (usersRes.error) throw usersRes.error;
+    if (vehiclesRes.error) throw vehiclesRes.error;
+    
+    const db: NexosDatabase = {
+      gangs: gangsRes.data || [],
+      suspects: suspectsRes.data || [],
+      crimes: crimesRes.data || [],
+      users: usersRes.data || [],
+      vehicles: vehiclesRes.data || []
+    };
+    
+    // Auto-semeia o administrador se não existir no Supabase
+    const hasAdmin = db.users.some(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
+    if (!hasAdmin) {
+      const adminUser: SystemUser = {
+        id: 'user-admin',
+        name: 'Administrador Nexos',
+        email: '1993lumendes@gmail.com',
+        password: 'NexosAdmin2026!',
+        role: 'Administrador do Sistema',
+        assignmentCity: 'Lajeado',
+        lastLogin: 'Nunca (Acesso Inicial)',
+        status: 'active'
+      };
+      db.users.push(adminUser);
+      await supabase!.from('users').insert([adminUser]);
+    }
+    
+    return db;
+  } catch (error) {
+    console.error('Erro ao buscar dados do Supabase:', error);
+    return null;
+  }
+};
+
+export const saveDatabaseToSupabase = async (db: NexosDatabase): Promise<boolean> => {
+  if (!isSupabaseConfigured()) return false;
+  
+  try {
+    // Sincroniza tabelas uma a uma
+    
+    // 1. Gangs
+    if (db.gangs.length > 0) {
+      const { error } = await supabase!.from('gangs').upsert(db.gangs);
+      if (error) throw error;
+      const gangIds = db.gangs.map(g => g.id);
+      await supabase!.from('gangs').delete().not('id', 'in', `(${gangIds.join(',')})`);
+    } else {
+      await supabase!.from('gangs').delete().neq('id', '');
+    }
+    
+    // 2. Suspects
+    if (db.suspects.length > 0) {
+      const { error } = await supabase!.from('suspects').upsert(db.suspects);
+      if (error) throw error;
+      const suspectIds = db.suspects.map(s => s.id);
+      await supabase!.from('suspects').delete().not('id', 'in', `(${suspectIds.join(',')})`);
+    } else {
+      await supabase!.from('suspects').delete().neq('id', '');
+    }
+    
+    // 3. Crimes
+    if (db.crimes.length > 0) {
+      const { error } = await supabase!.from('crimes').upsert(db.crimes);
+      if (error) throw error;
+      const crimeIds = db.crimes.map(c => c.id);
+      await supabase!.from('crimes').delete().not('id', 'in', `(${crimeIds.join(',')})`);
+    } else {
+      await supabase!.from('crimes').delete().neq('id', '');
+    }
+    
+    // 4. Users
+    if (db.users.length > 0) {
+      const { error } = await supabase!.from('users').upsert(db.users);
+      if (error) throw error;
+      const userIds = db.users.map(u => u.id);
+      await supabase!.from('users').delete().not('id', 'in', `(${userIds.join(',')})`);
+    } else {
+      await supabase!.from('users').delete().neq('id', '');
+    }
+    
+    // 5. Vehicles
+    if (db.vehicles.length > 0) {
+      const { error } = await supabase!.from('vehicles').upsert(db.vehicles);
+      if (error) throw error;
+      const vehicleIds = db.vehicles.map(v => v.id);
+      await supabase!.from('vehicles').delete().not('id', 'in', `(${vehicleIds.join(',')})`);
+    } else {
+      await supabase!.from('vehicles').delete().neq('id', '');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar dados no Supabase:', error);
+    return false;
+  }
+};
+
