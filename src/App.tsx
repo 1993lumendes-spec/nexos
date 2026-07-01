@@ -27,6 +27,7 @@ import {
   loadDatabaseFromSupabase,
   saveDatabaseToSupabase 
 } from './utils/db';
+import { hashPassword, verifyPassword } from './utils/auth';
 
 
 // Importando componentes das abas
@@ -244,14 +245,16 @@ function App() {
 
     if (isLoginMode) {
       const user = currentDb.users.find((u: SystemUser) => u.email.toLowerCase() === loginEmail.toLowerCase());
-      if (!user || user.password !== loginPassword) {
-        return alert('E-mail ou Senha incorretos.');
-      }
+      if (!user) return alert('E-mail ou Senha incorretos.');
+
+      const passwordMatch = await verifyPassword(loginPassword, user.password || '');
+      if (!passwordMatch) return alert('E-mail ou Senha incorretos.');
+
       if (user.status === 'inactive') {
         return alert('Sua conta está inativa. Aguarde a aprovação do Administrador (1993lumendes@gmail.com).');
       }
       user.lastLogin = formattedDate;
-      const { password: _p2, ...safeUser } = user;
+      const { password: _pw, ...safeUser } = user;
       setCurrentUser(safeUser);
       sessionStorage.setItem('nexos_current_user', JSON.stringify(safeUser));
       updateDb(currentDb);
@@ -263,11 +266,13 @@ function App() {
 
       const isLocalAdmin = loginEmail.toLowerCase() === '1993lumendes@gmail.com';
 
+      // Hash da senha antes de armazenar — nunca guardar texto puro
+      const hashedPwd = await hashPassword(loginPassword);
       const localUserObj: SystemUser = {
         id: `user-${Date.now()}`,
         name: loginName,
         email: loginEmail,
-        password: loginPassword,
+        password: hashedPwd,
         lastLogin: formattedDate,
         status: isLocalAdmin ? 'active' : 'inactive'
       };

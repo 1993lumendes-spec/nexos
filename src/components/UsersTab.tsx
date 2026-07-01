@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, UserPlus, X, Shield, Calendar } from 'lucide-react';
 import type { Gang, Suspect, Crime, SystemUser, SuspectVehicle } from '../types';
+import { hashPassword } from '../utils/auth';
 
 interface NexosState {
   gangs: Gang[];
@@ -44,8 +45,8 @@ export default function UsersTab({ db, onUpdateDb, currentUser }: UsersTabProps)
     );
   });
 
-  // Salvar novo usuário
-  const handleSaveUser = (e: React.FormEvent) => {
+  // Salvar novo usuário com senha hashed
+  const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userName.trim() || !userEmail.trim() || !userPassword.trim()) {
       return alert('Todos os campos são obrigatórios!');
@@ -58,11 +59,14 @@ export default function UsersTab({ db, onUpdateDb, currentUser }: UsersTabProps)
     const isAdminCreating = currentUser?.email?.toLowerCase() === '1993lumendes@gmail.com';
     const isNewUserAdmin = userEmail.toLowerCase() === '1993lumendes@gmail.com';
 
+    // Hash da senha antes de persistir — nunca armazenar em texto puro
+    const hashedPwd = await hashPassword(userPassword);
+
     const newUser: SystemUser = {
       id: `user-${Date.now()}`,
       name: userName,
       email: userEmail,
-      password: userPassword,
+      password: hashedPwd,
       lastLogin: 'Nunca (Aguardando primeiro acesso)',
       status: (isAdminCreating || isNewUserAdmin) ? 'active' : 'inactive'
     };

@@ -7,6 +7,7 @@ import {
   MOCK_VEHICLES 
 } from './mockData';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { ADMIN_PASSWORD_HASH } from './auth';
 
 export interface NexosDatabase {
   gangs: Gang[];
@@ -43,14 +44,15 @@ export const loadDatabase = (): NexosDatabase => {
       };
     }
 
-    // Auto-semeia o usuário administrador se não existir no LocalStorage
+    // Auto-semeia o administrador com a senha já em formato SHA-256
+    // A senha em texto puro NUNCA aparece no código-fonte do frontend
     const hasAdmin = db.users.some(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
     if (!hasAdmin) {
       db.users.push({
         id: 'user-admin',
         name: 'Administrador Nexos',
         email: '1993lumendes@gmail.com',
-        password: 'NexosAdmin2026!',
+        password: ADMIN_PASSWORD_HASH,
         role: 'Administrador do Sistema',
         assignmentCity: 'Lajeado',
         lastLogin: 'Nunca (Acesso Inicial)',
@@ -70,7 +72,7 @@ export const loadDatabase = (): NexosDatabase => {
           id: 'user-admin',
           name: 'Administrador Nexos',
           email: '1993lumendes@gmail.com',
-          password: 'NexosAdmin2026!',
+          password: ADMIN_PASSWORD_HASH,
           role: 'Administrador do Sistema',
           assignmentCity: 'Lajeado',
           lastLogin: 'Nunca (Acesso Inicial)',

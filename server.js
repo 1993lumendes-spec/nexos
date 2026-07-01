@@ -2,6 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
+
+const SALT_ROUNDS = 10;
 
 const app = express();
 const PORT = 5181;
@@ -50,11 +53,13 @@ function getDatabase() {
     // Auto-semeia o usuário administrador se não existir
     const hasAdmin = db.users.some(u => u.email.toLowerCase() === '1993lumendes@gmail.com');
     if (!hasAdmin) {
+      // Senha hash gerada em runtime — nunca armazenamos texto puro
+      const adminHash = bcrypt.hashSync(process.env.ADMIN_DEFAULT_PASSWORD || 'NexosAdmin2026!', SALT_ROUNDS);
       db.users.push({
         id: 'user-admin',
         name: 'Administrador Nexos',
         email: '1993lumendes@gmail.com',
-        password: 'NexosAdmin2026!',
+        password: adminHash,
         role: 'Administrador do Sistema',
         assignmentCity: 'Lajeado',
         lastLogin: 'Nunca (Acesso Inicial)',
@@ -118,19 +123,22 @@ app.post('/api/users/register', (req, res) => {
 
   const isAdmin = email.toLowerCase() === '1993lumendes@gmail.com';
 
-  // Cria novo usuário
+  // Cria novo usuário com senha hashed
+  const passwordHash = bcrypt.hashSync(password, SALT_ROUNDS);
   const user = {
     id: `user-${Date.now()}`,
     name,
     email,
-    password, // Armazenando a senha (como é local-first e simples, texto plano ou hash leve é suficiente)
+    password: passwordHash, // Armazenado como bcrypt hash — nunca em texto puro
     lastLogin: formattedDate,
     status: isAdmin ? 'active' : 'inactive'
   };
   
   db.users.push(user);
   saveDatabase(db);
-  res.json({ success: true, user });
+  // Nunca retornar o hash da senha na resposta
+  const { password: _omit, ...safeUser } = user;
+  res.json({ success: true, user: safeUser });
 });
 
 // Endpoint para login de usuário existente
@@ -143,7 +151,7 @@ app.post('/api/users/login', (req, res) => {
   const db = getDatabase();
   let user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
-  if (!user || user.password !== password) {
+  if (!user || !bcrypt.compareSync(password, user.password)) {
     return res.status(400).json({ error: 'E-mail ou Senha incorretos.' });
   }
 
@@ -154,11 +162,13 @@ app.post('/api/users/login', (req, res) => {
   const now = new Date();
   const formattedDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} - ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-  // Atualiza último login
+  // Atualiza último login e salva
   user.lastLogin = formattedDate;
-
   saveDatabase(db);
-  res.json({ success: true, user });
+
+  // Nunca retornar o hash da senha na resposta
+  const { password: _hash, ...safeUser } = user;
+  res.json({ success: true, user: safeUser });
 });
 
 // Iniciar servidor
