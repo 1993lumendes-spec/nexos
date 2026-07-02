@@ -30,7 +30,7 @@ import {
   saveDatabaseToSupabase 
 } from './utils/db';
 import { hashPassword, verifyPassword } from './utils/auth';
-import { isSupabaseConfigured } from './utils/supabaseClient';
+import { isSupabaseConfigured, setDynamicSupabaseConfig } from './utils/supabaseClient';
 
 
 // Importando componentes das abas
@@ -72,6 +72,9 @@ function App() {
   const [loginPassword, setLoginPassword] = useState('');
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
+  const [inputSupabaseUrl, setInputSupabaseUrl] = useState('');
+  const [inputSupabaseKey, setInputSupabaseKey] = useState('');
 
   // 1. Carregar Banco (Servidor -> Fallback LocalStorage)
   const cleanAndFixDb = (database: NexosState): NexosState => {
@@ -172,8 +175,28 @@ function App() {
       setCurrentUser(JSON.parse(savedUser));
     }
     
+    setInputSupabaseUrl(localStorage.getItem('nexos_supabase_url') || '');
+    setInputSupabaseKey(localStorage.getItem('nexos_supabase_key') || '');
+
     fetchDb();
   }, []);
+
+  const handleSaveConnection = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputSupabaseUrl.trim() || !inputSupabaseKey.trim()) {
+      return alert('Ambos os campos são obrigatórios para a conexão.');
+    }
+    if (!inputSupabaseUrl.trim().startsWith('http://') && !inputSupabaseUrl.trim().startsWith('https://')) {
+      return alert('A URL do Supabase deve iniciar com http:// ou https://');
+    }
+    setDynamicSupabaseConfig(inputSupabaseUrl, inputSupabaseKey);
+  };
+
+  const handleDisconnectSupabase = () => {
+    if (window.confirm('Tem certeza que deseja desconectar o Supabase e voltar para o Modo Local?')) {
+      setDynamicSupabaseConfig('', '');
+    }
+  };
 
   // Salvar no Banco (Servidor -> Fallback LocalStorage)
   const updateDb = async (newDb: NexosState) => {
@@ -444,6 +467,77 @@ function App() {
     }
   };
 
+  // Renderizador do modal de conexão com o Supabase
+  const renderConnectionModal = () => {
+    if (!showConnectionModal) return null;
+    return (
+      <div className="modal-backdrop" style={{ zIndex: 2000 }}>
+        <div className="modal-content" style={{ maxWidth: '440px' }}>
+          <div className="glass-panel-header" style={{ marginBottom: '20px' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Shield className="text-accent" size={20} />
+              Conexão com o Supabase
+            </h2>
+            <button className="close-btn" onClick={() => setShowConnectionModal(false)}>
+              <X size={20} />
+            </button>
+          </div>
+          
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+            Configure as credenciais do seu projeto Supabase abaixo. Isso conectará o sistema a um banco de dados em nuvem compartilhado, permitindo acessar e sincronizar os dados de qualquer computador, guia anônima ou celular.
+          </p>
+
+          <form onSubmit={handleSaveConnection} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="form-group">
+              <label>Supabase Project URL</label>
+              <input 
+                type="url"
+                className="form-input"
+                placeholder="https://xxxxxxxxxxxxxxxxxxxx.supabase.co"
+                value={inputSupabaseUrl}
+                onChange={(e) => setInputSupabaseUrl(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Supabase Anon (Public) API Key</label>
+              <textarea 
+                className="form-textarea"
+                placeholder="Cole a chave pública anônima do Supabase..."
+                value={inputSupabaseKey}
+                onChange={(e) => setInputSupabaseKey(e.target.value)}
+                style={{ minHeight: '100px', fontSize: '0.75rem', fontFamily: 'monospace' }}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+              <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                Salvar e Conectar
+              </button>
+              
+              {isSupabaseConfigured() && (
+                <button 
+                  type="button" 
+                  className="btn-danger" 
+                  onClick={handleDisconnectSupabase} 
+                  style={{ width: '100%', justifyContent: 'center', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                >
+                  Desconectar (Voltar ao Modo Local)
+                </button>
+              )}
+              
+              <button type="button" className="btn-secondary" onClick={() => setShowConnectionModal(false)} style={{ width: '100%', justifyContent: 'center' }}>
+                Voltar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   // Renders do conteúdo principal
   const renderTabContent = () => {
     switch (currentTab) {
@@ -526,10 +620,30 @@ function App() {
     }
   };
 
-  // Se o agente de segurança não estiver identificado, exibe a tela de registro/login bloqueante
   if (!currentUser) {
     return (
-      <div className="modal-backdrop" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <div className="modal-backdrop" style={{ backgroundColor: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Status da conexão no login */}
+        <div 
+          onClick={() => setShowConnectionModal(true)} 
+          title="Configurar Conexão com o Supabase"
+          style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}
+        >
+          <div className="badge-status" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
+            <div 
+              style={{ 
+                backgroundColor: isSupabaseConfigured() ? '#10b981' : '#f59e0b',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                boxShadow: isSupabaseConfigured() ? '0 0 8px #10b981' : '0 0 8px #f59e0b'
+              }}
+            ></div>
+            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              {isSupabaseConfigured() ? 'NUVEM • SUPABASE' : 'MODO LOCAL • LOCALSTORAGE'}
+            </span>
+          </div>
+        </div>
         <div className="glass-panel" style={{ width: '90%', maxWidth: '440px', padding: '36px', boxShadow: 'var(--shadow-lg)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', textAlign: 'center', marginBottom: '20px' }}>
             <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--accent-glow)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', border: '1px solid var(--border-glow)' }}>
@@ -693,6 +807,8 @@ function App() {
             </div>
           </div>
         )}
+
+        {renderConnectionModal()}
       </div>
     );
   }
@@ -852,7 +968,24 @@ function App() {
           <div className="top-bar-title">
             <h1>{getTabTitle()}</h1>
           </div>
-          <div className="badge-status" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)' }}>
+          <div 
+            className="badge-status" 
+            onClick={() => setShowConnectionModal(true)} 
+            title="Configurar Conexão com o Supabase"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              padding: '4px 8px', 
+              borderRadius: '4px', 
+              backgroundColor: 'rgba(255,255,255,0.03)', 
+              border: '1px solid var(--border-color)',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'}
+          >
             <div 
               style={{ 
                 backgroundColor: isSupabaseConfigured() ? '#10b981' : '#f59e0b',
@@ -870,6 +1003,8 @@ function App() {
 
         {renderTabContent()}
       </main>
+
+      {renderConnectionModal()}
     </div>
   );
 }
