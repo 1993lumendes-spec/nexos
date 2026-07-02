@@ -95,6 +95,34 @@ function App() {
     try {
       const supabaseDb = await loadDatabaseFromSupabase();
       if (supabaseDb) {
+        // Proteção de Migração: se o Supabase estiver online mas vazio, e o LocalStorage tiver dados,
+        // sincroniza o conteúdo local para a nuvem para evitar tela branca/dados zerados.
+        const localDb = loadDatabase();
+        const hasLocalData = localDb.gangs.length > 0 || localDb.suspects.length > 0 || localDb.crimes.length > 0;
+        const hasSupabaseData = supabaseDb.gangs.length > 0 || supabaseDb.suspects.length > 0 || supabaseDb.crimes.length > 0;
+
+        if (hasLocalData && !hasSupabaseData) {
+          console.log('Dados locais detectados e Supabase vazio. Migrando dados locais para a nuvem...');
+          
+          // Mescla usuários cadastrados
+          const mergedUsers = [...supabaseDb.users];
+          localDb.users.forEach(localUser => {
+            if (!mergedUsers.some(u => u.email.toLowerCase() === localUser.email.toLowerCase())) {
+              mergedUsers.push(localUser);
+            }
+          });
+
+          const mergedDb = {
+            ...localDb,
+            users: mergedUsers
+          };
+
+          await saveDatabaseToSupabase(mergedDb);
+          const cleanedDb = cleanAndFixDb(mergedDb);
+          setDb(cleanedDb);
+          return cleanedDb;
+        }
+
         const cleanedDb = cleanAndFixDb(supabaseDb);
         setDb(cleanedDb);
         if (cleanedDb !== supabaseDb) {
