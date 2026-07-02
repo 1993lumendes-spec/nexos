@@ -48,14 +48,9 @@ export const loadDatabase = (): NexosDatabase => {
 
     let db: NexosDatabase;
     if (!data) {
-      // Inicia limpo, mas com o administrador mestre pré-semeado
-      db = {
-        gangs: [],
-        suspects: [],
-        crimes: [],
-        users: [],
-        vehicles: []
-      };
+      // Inicia pré-semeado com os dados padrão do Rio Grande do Sul
+      db = getDemoDatabase();
+      saveDatabase(db);
     } else {
       const parsed = JSON.parse(data);
       db = {

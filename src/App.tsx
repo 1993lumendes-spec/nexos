@@ -105,26 +105,50 @@ function App() {
         const hasLocalData = localDb.gangs.length > 0 || localDb.suspects.length > 0 || localDb.crimes.length > 0;
         const hasSupabaseData = supabaseDb.gangs.length > 0 || supabaseDb.suspects.length > 0 || supabaseDb.crimes.length > 0;
 
-        if (hasLocalData && !hasSupabaseData) {
-          console.log('Dados locais detectados e Supabase vazio. Migrando dados locais para a nuvem...');
-          
-          // Mescla usuários cadastrados
-          const mergedUsers = [...supabaseDb.users];
-          localDb.users.forEach(localUser => {
-            if (!mergedUsers.some(u => u.email.toLowerCase() === localUser.email.toLowerCase())) {
-              mergedUsers.push(localUser);
-            }
-          });
+        if (!hasSupabaseData) {
+          if (hasLocalData) {
+            console.log('Dados locais detectados e Supabase vazio. Migrando dados locais para a nuvem...');
+            
+            // Mescla usuários cadastrados
+            const mergedUsers = [...supabaseDb.users];
+            localDb.users.forEach(localUser => {
+              if (!mergedUsers.some(u => u.email.toLowerCase() === localUser.email.toLowerCase())) {
+                mergedUsers.push(localUser);
+              }
+            });
 
-          const mergedDb = {
-            ...localDb,
-            users: mergedUsers
-          };
+            const mergedDb = {
+              ...localDb,
+              users: mergedUsers
+            };
 
-          await saveDatabaseToSupabase(mergedDb);
-          const cleanedDb = cleanAndFixDb(mergedDb);
-          setDb(cleanedDb);
-          return cleanedDb;
+            await saveDatabaseToSupabase(mergedDb);
+            const cleanedDb = cleanAndFixDb(mergedDb);
+            setDb(cleanedDb);
+            return cleanedDb;
+          } else {
+            // Caso ambos estejam vazios, semeia dados de demonstração automaticamente
+            console.log('Nuvem e LocalStorage vazios. Inicializando com dados padrão automaticamente...');
+            const demoDb = getDemoDatabase();
+            
+            // Preserva usuários cadastrados no Supabase (admin)
+            const mergedUsers = [...supabaseDb.users];
+            demoDb.users.forEach(u => {
+              if (!mergedUsers.some(existing => existing.email.toLowerCase() === u.email.toLowerCase())) {
+                mergedUsers.push(u);
+              }
+            });
+
+            const seededDb = {
+              ...demoDb,
+              users: mergedUsers
+            };
+
+            await saveDatabaseToSupabase(seededDb);
+            const cleanedDb = cleanAndFixDb(seededDb);
+            setDb(cleanedDb);
+            return cleanedDb;
+          }
         }
 
         const cleanedDb = cleanAndFixDb(supabaseDb);
