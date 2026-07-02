@@ -22,7 +22,30 @@ const DB_KEY = 'nexos_db_producao_v3';
 
 export const loadDatabase = (): NexosDatabase => {
   try {
-    const data = localStorage.getItem(DB_KEY);
+    const oldKeys = [
+      'nexos_db',
+      'nexos_db_producao',
+      'nexos_db_producao_v2',
+      'nexos_db_v2',
+      'nexos_db_v1',
+      'nexos_database',
+      'nexos_state'
+    ];
+    
+    let data = localStorage.getItem(DB_KEY);
+    if (!data) {
+      // Procura em chaves antigas para migrar dados
+      for (const oldKey of oldKeys) {
+        const oldData = localStorage.getItem(oldKey);
+        if (oldData) {
+          console.log(`Detectada chave de banco antiga: "${oldKey}". Migrando dados para "${DB_KEY}"...`);
+          data = oldData;
+          localStorage.setItem(DB_KEY, oldData);
+          break;
+        }
+      }
+    }
+
     let db: NexosDatabase;
     if (!data) {
       // Inicia limpo, mas com o administrador mestre pré-semeado
