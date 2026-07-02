@@ -16,7 +16,8 @@ import {
   FolderLock,
   FileWarning,
   LogOut,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import type { Gang, Suspect, Crime, SystemUser, SuspectVehicle } from './types';
 import { 
@@ -428,6 +429,21 @@ function App() {
     }
   };
 
+  // Limpar todo o banco de dados (exceto usuários cadastrados)
+  const handleClearDatabase = () => {
+    if (window.confirm('⚠️ ATENÇÃO: Tem certeza absoluta que deseja apagar todas as quadrilhas, suspeitos, crimes e veículos cadastrados? Os policiais e contas autorizadas serão mantidos.')) {
+      const cleanDb: NexosState = {
+        gangs: [],
+        suspects: [],
+        crimes: [],
+        users: db.users, // preserva policiais autorizados
+        vehicles: []
+      };
+      updateDb(cleanDb);
+      alert('Banco de dados limpo com sucesso!');
+    }
+  };
+
   // Renders do conteúdo principal
   const renderTabContent = () => {
     switch (currentTab) {
@@ -796,6 +812,20 @@ function App() {
           <button className="footer-btn" onClick={handleLoadDemoData} style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', color: 'var(--text-primary)', borderColor: 'rgba(99, 102, 241, 0.2)', marginBottom: '4px' }}>
             <RefreshCcw size={16} />
             <span>Dados de Teste</span>
+          </button>
+
+          <button 
+            className="footer-btn" 
+            onClick={handleClearDatabase} 
+            style={{ 
+              backgroundColor: 'rgba(239, 68, 68, 0.05)', 
+              color: '#f87171', 
+              borderColor: 'rgba(248, 113, 113, 0.25)', 
+              marginBottom: '4px' 
+            }}
+          >
+            <Trash2 size={16} />
+            <span>Limpar Banco</span>
           </button>
           
           <div className="file-input-wrapper footer-btn">
