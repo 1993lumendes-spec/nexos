@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS suspects (
   "criminalRecord" TEXT NOT NULL DEFAULT '',
   status         TEXT NOT NULL DEFAULT 'investigating',
   "birthDate"      TEXT,
-  "modusOperandi"  TEXT
+  "modusOperandi"  TEXT,
+  "isUnidentified" BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS crimes (
@@ -67,8 +68,13 @@ CREATE TABLE IF NOT EXISTS vehicles (
   color       TEXT NOT NULL DEFAULT '',
   "gangId"      TEXT NOT NULL DEFAULT '',
   "suspectId"   TEXT NOT NULL DEFAULT '',
-  description TEXT NOT NULL DEFAULT ''
+  description TEXT NOT NULL DEFAULT '',
+  photo       TEXT DEFAULT ''
 );
+
+-- Adiciona colunas ausentes em tabelas existentes (compatibilidade)
+ALTER TABLE suspects ADD COLUMN IF NOT EXISTS "isUnidentified" BOOLEAN DEFAULT FALSE;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS "photo" TEXT DEFAULT '';
 
 
 -- =====================
@@ -120,7 +126,7 @@ CREATE POLICY "nexos_anon_write_vehicles" ON vehicles  FOR ALL USING (true) WITH
 
 -- =====================
 -- PARTE 5: ATUALIZAR SENHA DO ADMINISTRADOR
--- SHA-256 de: #Arla$15582#
+-- Hash SHA-256 da senha do Administrador do Sistema
 -- =====================
 
 UPDATE users
