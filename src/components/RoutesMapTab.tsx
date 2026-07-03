@@ -94,6 +94,13 @@ export default function RoutesMapTab({ db }: RoutesMapTabProps) {
 
     const map = mapInstanceRef.current;
 
+    // Forçar cálculo de tamanho correto do mapa para evitar tela cinza/cortada
+    setTimeout(() => {
+      if (map) {
+        map.invalidateSize();
+      }
+    }, 200);
+
     // Limpa todas as camadas criadas anteriormente (linhas, marcadores de rotas)
     mapElementsRef.current.forEach(layer => layer.remove());
     mapElementsRef.current = [];

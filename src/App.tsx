@@ -10,14 +10,12 @@ import {
   AlertCircle,
   Car,
   UserCheck,
-  RefreshCcw,
   Lock,
   UserPlus,
   FolderLock,
   FileWarning,
   LogOut,
-  X,
-  Trash2
+  X
 } from 'lucide-react';
 import type { Gang, Suspect, Crime, SystemUser, SuspectVehicle } from './types';
 import { 
@@ -481,29 +479,7 @@ function App() {
     );
   };
 
-  // Carregar dados de demonstração/teste
-  const handleLoadDemoData = () => {
-    if (window.confirm('Isso irá substituir os dados atuais pelos dados de teste do Rio Grande do Sul. Deseja continuar?')) {
-      const demoDb = getDemoDatabase();
-      updateDb(demoDb);
-      alert('Dados de demonstração carregados!');
-    }
-  };
 
-  // Limpar todo o banco de dados (exceto usuários cadastrados)
-  const handleClearDatabase = () => {
-    if (window.confirm('⚠️ ATENÇÃO: Tem certeza absoluta que deseja apagar todas as quadrilhas, suspeitos, crimes e veículos cadastrados? Os policiais e contas autorizadas serão mantidos.')) {
-      const cleanDb: NexosState = {
-        gangs: [],
-        suspects: [],
-        crimes: [],
-        users: db.users, // preserva policiais autorizados
-        vehicles: []
-      };
-      updateDb(cleanDb);
-      alert('Banco de dados limpo com sucesso!');
-    }
-  };
 
   // Renderizador do modal de conexão com o Supabase
   const renderConnectionModal = () => {
@@ -661,27 +637,6 @@ function App() {
   if (!currentUser) {
     return (
       <div className="modal-backdrop" style={{ backgroundColor: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Status da conexão no login */}
-        <div 
-          onClick={() => setShowConnectionModal(true)} 
-          title="Configurar Conexão com o Supabase"
-          style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}
-        >
-          <div className="badge-status" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
-            <div 
-              style={{ 
-                backgroundColor: isSupabaseConfigured() ? '#10b981' : '#f59e0b',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                boxShadow: isSupabaseConfigured() ? '0 0 8px #10b981' : '0 0 8px #f59e0b'
-              }}
-            ></div>
-            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
-              {isSupabaseConfigured() ? 'NUVEM • SUPABASE' : 'MODO LOCAL • LOCALSTORAGE'}
-            </span>
-          </div>
-        </div>
         <div className="glass-panel" style={{ width: '90%', maxWidth: '440px', padding: '36px', boxShadow: 'var(--shadow-lg)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', textAlign: 'center', marginBottom: '20px' }}>
             <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--accent-glow)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', border: '1px solid var(--border-glow)' }}>
@@ -963,24 +918,7 @@ function App() {
             <span>Encerrar Sessão</span>
           </button>
 
-          <button className="footer-btn" onClick={handleLoadDemoData} style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', color: 'var(--text-primary)', borderColor: 'rgba(99, 102, 241, 0.2)', marginBottom: '4px' }}>
-            <RefreshCcw size={16} />
-            <span>Dados de Teste</span>
-          </button>
 
-          <button 
-            className="footer-btn" 
-            onClick={handleClearDatabase} 
-            style={{ 
-              backgroundColor: 'rgba(239, 68, 68, 0.05)', 
-              color: '#f87171', 
-              borderColor: 'rgba(248, 113, 113, 0.25)', 
-              marginBottom: '4px' 
-            }}
-          >
-            <Trash2 size={16} />
-            <span>Limpar Banco</span>
-          </button>
           
           <div className="file-input-wrapper footer-btn">
             <Upload size={16} />
@@ -1006,37 +944,7 @@ function App() {
           <div className="top-bar-title">
             <h1>{getTabTitle()}</h1>
           </div>
-          <div 
-            className="badge-status" 
-            onClick={() => setShowConnectionModal(true)} 
-            title="Configurar Conexão com o Supabase"
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              padding: '4px 8px', 
-              borderRadius: '4px', 
-              backgroundColor: 'rgba(255,255,255,0.03)', 
-              border: '1px solid var(--border-color)',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'}
-          >
-            <div 
-              style={{ 
-                backgroundColor: isSupabaseConfigured() ? '#10b981' : '#f59e0b',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                boxShadow: isSupabaseConfigured() ? '0 0 8px #10b981' : '0 0 8px #f59e0b'
-              }}
-            ></div>
-            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
-              {isSupabaseConfigured() ? 'NUVEM • SUPABASE' : 'MODO LOCAL • LOCALSTORAGE'}
-            </span>
-          </div>
+
         </header>
 
         {renderTabContent()}

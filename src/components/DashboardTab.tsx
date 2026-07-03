@@ -150,6 +150,13 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
 
     const map = mapInstanceRef.current;
 
+    // Forçar cálculo de tamanho correto do mapa para evitar tela cinza/cortada
+    setTimeout(() => {
+      if (map) {
+        map.invalidateSize();
+      }
+    }, 200);
+
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
