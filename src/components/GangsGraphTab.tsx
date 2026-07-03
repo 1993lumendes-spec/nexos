@@ -25,6 +25,7 @@ export default function GangsGraphTab({ db }: GangsGraphTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const networkRef = useRef<Network | null>(null);
   const [graphMode, setGraphMode] = useState<'gangs' | 'hybrid'>('hybrid');
+  const [suspectViewMode, setSuspectViewMode] = useState<'photo' | 'icon' | 'name'>('photo');
   const [selectedNodeInfo, setSelectedNodeInfo] = useState<{
     type: 'gang' | 'suspect' | 'vehicle';
     name: string;
@@ -160,6 +161,21 @@ export default function GangsGraphTab({ db }: GangsGraphTabProps) {
           ? `[CONEXÃO MULTI-QUADRILHAS]\nSuspeito: ${suspect.name}\nRG: ${suspect.rg}\nStatus: ${suspect.status}\nQuadrilhas: ${gangNames}`
           : `Suspeito: ${suspect.name}\nRG: ${suspect.rg}\nStatus: ${suspect.status}`;
 
+        let nodeShape: string = 'circularImage';
+        let nodeImage: string | undefined = suspect.primaryPhoto || DEFAULT_AVATAR;
+        let nodeSize: number = isMultiGangSuspect ? 26 : 16;
+        let nodeFont = { color: '#cbd5e1', size: 11, face: 'Inter' };
+
+        if (suspectViewMode === 'icon') {
+          nodeShape = 'dot';
+          nodeImage = undefined;
+          nodeSize = isMultiGangSuspect ? 20 : 12;
+        } else if (suspectViewMode === 'name') {
+          nodeShape = 'text';
+          nodeImage = undefined;
+          nodeFont = { color: '#cbd5e1', size: isMultiGangSuspect ? 14 : 11, face: 'Inter' };
+        }
+
         nodes.push({
           id: suspect.id,
           label: finalLabel,
@@ -169,10 +185,10 @@ export default function GangsGraphTab({ db }: GangsGraphTabProps) {
             border: borderC,
             highlight: { background: '#6366f1', border: '#ffffff' }
           },
-          shape: 'circularImage',
-          image: suspect.primaryPhoto || DEFAULT_AVATAR,
-          size: isMultiGangSuspect ? 26 : 16,
-          font: { color: '#cbd5e1', size: 11, face: 'Inter' },
+          shape: nodeShape,
+          image: nodeImage,
+          size: nodeSize,
+          font: nodeFont,
           borderWidth: isMultiGangSuspect ? 4 : 2
         });
 
@@ -346,7 +362,7 @@ export default function GangsGraphTab({ db }: GangsGraphTabProps) {
         networkRef.current = null;
       }
     };
-  }, [db.gangs, db.suspects, db.crimes, db.vehicles, graphMode]);
+  }, [db.gangs, db.suspects, db.crimes, db.vehicles, graphMode, suspectViewMode]);
 
   // Função para focar/buscar nó
   const handleSearchNode = (e: React.FormEvent) => {
@@ -421,28 +437,76 @@ export default function GangsGraphTab({ db }: GangsGraphTabProps) {
   return (
     <div className="tab-container">
       {/* Opções de visualização */}
-      <div className="search-bar-row">
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            className={`btn-secondary ${graphMode === 'hybrid' ? 'active' : ''}`}
-            style={{ 
-              backgroundColor: graphMode === 'hybrid' ? 'var(--accent)' : 'var(--bg-secondary)',
-              color: 'white' 
-            }}
-            onClick={() => setGraphMode('hybrid')}
-          >
-            Grafo Híbrido (Membros + Veículos + Quadrilhas)
-          </button>
-          <button 
-            className={`btn-secondary ${graphMode === 'gangs' ? 'active' : ''}`}
-            style={{ 
-              backgroundColor: graphMode === 'gangs' ? 'var(--accent)' : 'var(--bg-secondary)',
-              color: 'white' 
-            }}
-            onClick={() => setGraphMode('gangs')}
-          >
-            Apenas Conexões de Quadrilhas
-          </button>
+      <div className="search-bar-row" style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              className={`btn-secondary ${graphMode === 'hybrid' ? 'active' : ''}`}
+              style={{ 
+                backgroundColor: graphMode === 'hybrid' ? 'var(--accent)' : 'var(--bg-secondary)',
+                color: 'white' 
+              }}
+              onClick={() => setGraphMode('hybrid')}
+            >
+              Grafo Híbrido (Membros + Veículos + Quadrilhas)
+            </button>
+            <button 
+              className={`btn-secondary ${graphMode === 'gangs' ? 'active' : ''}`}
+              style={{ 
+                backgroundColor: graphMode === 'gangs' ? 'var(--accent)' : 'var(--bg-secondary)',
+                color: 'white' 
+              }}
+              onClick={() => setGraphMode('gangs')}
+            >
+              Apenas Conexões de Quadrilhas
+            </button>
+          </div>
+
+          {/* Seletor de visualização de suspeitos */}
+          {graphMode === 'hybrid' && (
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'bold', marginRight: '6px', textTransform: 'uppercase' }}>Suspeitos:</span>
+              <button 
+                className={`btn-secondary ${suspectViewMode === 'photo' ? 'active' : ''}`}
+                style={{ 
+                  backgroundColor: suspectViewMode === 'photo' ? 'var(--accent)' : 'transparent',
+                  color: 'white',
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  border: suspectViewMode === 'photo' ? 'none' : '1px solid transparent'
+                }}
+                onClick={() => setSuspectViewMode('photo')}
+              >
+                Foto
+              </button>
+              <button 
+                className={`btn-secondary ${suspectViewMode === 'icon' ? 'active' : ''}`}
+                style={{ 
+                  backgroundColor: suspectViewMode === 'icon' ? 'var(--accent)' : 'transparent',
+                  color: 'white',
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  border: suspectViewMode === 'icon' ? 'none' : '1px solid transparent'
+                }}
+                onClick={() => setSuspectViewMode('icon')}
+              >
+                Ícone
+              </button>
+              <button 
+                className={`btn-secondary ${suspectViewMode === 'name' ? 'active' : ''}`}
+                style={{ 
+                  backgroundColor: suspectViewMode === 'name' ? 'var(--accent)' : 'transparent',
+                  color: 'white',
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  border: suspectViewMode === 'name' ? 'none' : '1px solid transparent'
+                }}
+                onClick={() => setSuspectViewMode('name')}
+              >
+                Nome
+              </button>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSearchNode} className="search-input-wrapper" style={{ display: 'flex', gap: '8px' }}>

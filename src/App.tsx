@@ -222,32 +222,28 @@ function App() {
     }
   };
 
-  // Salvar no Banco (Servidor -> Fallback LocalStorage)
+  // Salvar no Banco (Sincronização Nuvem + Fallback Local)
   const updateDb = async (newDb: NexosState) => {
     setDb(newDb);
     
-    // 1. Tenta salvar no Supabase
+    // Salva sempre no LocalStorage para garantir resiliência local imediata
+    saveDatabase(newDb);
+    
+    // Salva no Express Server local em segundo plano
     try {
-      const success = await saveDatabaseToSupabase(newDb, db);
-      if (success) return;
-    } catch (err) {
-      console.warn('Erro ao salvar no Supabase. Tentando Express Server...');
-    }
-
-    // 2. Tenta salvar no Express Server local
-    try {
-      const res = await fetch('/api/db', {
+      fetch('/api/db', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newDb)
-      });
-      if (res.ok) return;
-    } catch (err) {
-      console.warn('Servidor offline ao salvar, usando LocalStorage como backup.');
-    }
+      }).catch(() => {});
+    } catch (e) {}
 
-    // 3. Fallback final para LocalStorage
-    saveDatabase(newDb);
+    // Salva no Supabase
+    try {
+      await saveDatabaseToSupabase(newDb, db);
+    } catch (err) {
+      console.warn('Erro ao salvar no Supabase:', err);
+    }
   };
 
   // Validador de senha forte

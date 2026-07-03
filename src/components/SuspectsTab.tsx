@@ -1047,16 +1047,18 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
           id="suspect-dossier-export" 
           className="no-uppercase"
           style={{
-            position: 'absolute',
-            left: '-9999px',
-            top: '-9999px',
+            position: 'fixed',
+            left: '100%',
+            top: '100%',
             width: '800px',
             backgroundColor: '#111827',
             color: '#f9fafb',
             padding: '40px',
             fontFamily: '"Courier New", Courier, monospace',
             border: '4px solid #374151',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            pointerEvents: 'none',
+            zIndex: -9999
           }}
         >
           {/* Header */}
