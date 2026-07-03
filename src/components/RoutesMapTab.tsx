@@ -9,7 +9,7 @@ import {
   Filter
 } from 'lucide-react';
 import type { Gang, Suspect, Crime } from '../types';
-import { CITIES_RS } from '../utils/mockData';
+import { getCityCoords } from '../utils/mockData';
 
 interface RoutesMapTabProps {
   db: { gangs: Gang[]; suspects: Suspect[]; crimes: Crime[] };
@@ -35,22 +35,6 @@ export default function RoutesMapTab({ db }: RoutesMapTabProps) {
   const [timelineDate, setTimelineDate] = useState<string>(maxDate);
   const [isPlaying, setIsPlaying] = useState(false);
   const playIntervalRef = useRef<any>(null);
-
-  // Helper para obter coordenadas das cidades com fallback
-  const getCityCoords = (cityName: string): [number, number] => {
-    const normalized = cityName.trim().toLowerCase();
-    for (const [key, city] of Object.entries(CITIES_RS)) {
-      if (key.toLowerCase() === normalized) {
-        return city.coordinates;
-      }
-    }
-    
-    // Procura nos crimes se existe alguma coordenada cadastrada com esse nome de cidade
-    const crimeCity = db.crimes.find(c => c.city.toLowerCase() === normalized);
-    if (crimeCity) return crimeCity.coordinates;
-
-    return [-30.0346, -51.2177]; // Porto Alegre
-  };
 
   // Filtrar crimes com base no slider da timeline
   const activeCrimes = db.crimes.filter(c => {
