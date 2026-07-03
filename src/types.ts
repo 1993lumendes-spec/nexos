@@ -18,6 +18,7 @@ export interface Suspect {
   status: 'active' | 'arrested' | 'investigating';
   birthDate?: string;
   modusOperandi?: string; // Como costuma agir
+  isUnidentified?: boolean; // Suspeito ainda não identificado (Desconhecido)
 }
 
 export interface Gang {

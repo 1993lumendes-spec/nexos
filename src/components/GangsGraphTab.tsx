@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import type { Gang, Suspect, Crime, SystemUser, SuspectVehicle } from '../types';
 
+const DEFAULT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%232a2f3d"/><circle cx="100" cy="80" r="40" fill="%234b5563"/><path d="M40,160 C40,120 160,120 160,160 Z" fill="%234b5563"/></svg>`;
+
 interface NexosState {
   gangs: Gang[];
   suspects: Suspect[];
@@ -129,6 +131,9 @@ export default function GangsGraphTab({ db }: GangsGraphTabProps) {
 
       // Adiciona nós dos suspeitos (Tamanho médio)
       db.suspects.forEach(suspect => {
+        const associatedGangsList = getSuspectGangs(suspect);
+        const isMultiGangSuspect = associatedGangsList.length > 1;
+
         let nodeColor = '#475569';
         let borderC = '#94a3b8';
         
@@ -143,24 +148,36 @@ export default function GangsGraphTab({ db }: GangsGraphTabProps) {
           borderC = '#fcd34d';
         }
 
+        if (isMultiGangSuspect) {
+          borderC = '#a855f7'; // Roxo neon
+        }
+
+        const suspectName = suspect.aliases ? `${suspect.name} (${suspect.aliases})` : suspect.name;
+        const finalLabel = isMultiGangSuspect ? `🔗 ${suspectName}` : suspectName;
+        
+        const gangNames = associatedGangsList.map(gId => db.gangs.find(g => g.id === gId)?.name || gId).join(', ');
+        const tooltipTitle = isMultiGangSuspect
+          ? `[CONEXÃO MULTI-QUADRILHAS]\nSuspeito: ${suspect.name}\nRG: ${suspect.rg}\nStatus: ${suspect.status}\nQuadrilhas: ${gangNames}`
+          : `Suspeito: ${suspect.name}\nRG: ${suspect.rg}\nStatus: ${suspect.status}`;
+
         nodes.push({
           id: suspect.id,
-          label: suspect.aliases ? `${suspect.name} (${suspect.aliases})` : suspect.name,
-          title: `Suspeito: ${suspect.name}\nRG: ${suspect.rg}\nStatus: ${suspect.status}`,
+          label: finalLabel,
+          title: tooltipTitle,
           color: {
             background: nodeColor,
             border: borderC,
             highlight: { background: '#6366f1', border: '#ffffff' }
           },
-          shape: 'dot',
-          size: 14,
+          shape: 'circularImage',
+          image: suspect.primaryPhoto || DEFAULT_AVATAR,
+          size: isMultiGangSuspect ? 26 : 16,
           font: { color: '#cbd5e1', size: 11, face: 'Inter' },
-          borderWidth: 1
+          borderWidth: isMultiGangSuspect ? 4 : 2
         });
 
         // Conecta suspeito às quadrilhas
-        const associatedGangs = getSuspectGangs(suspect);
-        associatedGangs.forEach(gId => {
+        associatedGangsList.forEach(gId => {
           const gang = db.gangs.find(g => g.id === gId);
           edges.push({
             from: suspect.id,

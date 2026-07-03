@@ -986,3 +986,43 @@ h1, h2, h3, h4, h5, h6 {
   50% { transform: scale(1.15); opacity: 1; }
   100% { transform: scale(1); opacity: 0.7; }
 }
+
+/* Transforma todos os textos e inputs para maiúsculas automaticamente */
+body, 
+button, 
+select, 
+option,
+span, 
+p, 
+h1, 
+h2, 
+h3, 
+h4, 
+h5, 
+h6, 
+label, 
+a, 
+td, 
+th, 
+textarea,
+input:not([type="password"]):not([type="email"]) {
+  text-transform: uppercase;
+}
+
+/* Evita que placeholders ou textos internos de senhas/e-mails fiquem em maiúsculas */
+input[type="password"],
+input[type="email"],
+.no-uppercase,
+.no-uppercase * {
+  text-transform: none !important;
+}
+
+.vehicle-thumbnail-hover {
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.vehicle-thumbnail-hover:hover {
+  transform: scale(1.08);
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 12px var(--accent-glow) !important;
+}

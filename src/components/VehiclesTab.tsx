@@ -205,6 +205,7 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
             <thead>
               <tr>
                 <th>Placa</th>
+                <th>Foto</th>
                 <th>Marca / Modelo / Cor</th>
                 <th>Quadrilha Vinculada</th>
                 <th>Motorista / Suspeito Associado</th>
@@ -266,42 +267,43 @@ export default function VehiclesTab({ db, onUpdateDb }: VehiclesTabProps) {
                       </div>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {veh.photo ? (
-                          <img 
-                            src={veh.photo} 
-                            alt={veh.brandModel} 
-                            style={{ 
-                              width: '85px', 
-                              height: '56px', 
-                              borderRadius: '6px', 
-                              objectFit: 'cover', 
-                              border: '1.5px solid var(--border-color)',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                              cursor: 'pointer',
-                              transition: 'transform 0.2s ease, border-color 0.2s ease'
-                            }}
-                            className="vehicle-thumbnail-hover"
-                            onClick={() => setPreviewPhoto(veh.photo || null)}
-                          />
-                        ) : (
-                          <div style={{ 
-                            width: '85px', 
-                            height: '56px', 
-                            borderRadius: '6px', 
-                            backgroundColor: 'rgba(255,255,255,0.03)', 
-                            border: '1.5px dashed var(--border-color)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center' 
-                          }}>
-                            <Car size={18} className="text-muted" />
-                          </div>
-                        )}
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{veh.brandModel}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Cor: {veh.color || 'Não informada'}</span>
+                      {veh.photo ? (
+                        <img 
+                          src={veh.photo} 
+                          alt={veh.brandModel} 
+                          style={{ 
+                            width: '100px', 
+                            height: '66px', 
+                            borderRadius: '8px', 
+                            objectFit: 'cover', 
+                            border: '2px solid rgba(255, 255, 255, 0.08)',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                            cursor: 'pointer',
+                            display: 'block'
+                          }}
+                          className="vehicle-thumbnail-hover"
+                          onClick={() => setPreviewPhoto(veh.photo || null)}
+                        />
+                      ) : (
+                        <div style={{ 
+                          width: '100px', 
+                          height: '66px', 
+                          borderRadius: '8px', 
+                          backgroundColor: 'rgba(255,255,255,0.02)', 
+                          border: '2px dashed rgba(255, 255, 255, 0.05)', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          color: 'var(--text-muted)'
+                        }}>
+                          <Car size={24} />
                         </div>
+                      )}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{veh.brandModel}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Cor: {veh.color || 'Não informada'}</span>
                       </div>
                     </td>
                     <td>

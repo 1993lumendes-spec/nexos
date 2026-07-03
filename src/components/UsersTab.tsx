@@ -36,6 +36,8 @@ export default function UsersTab({ db, onUpdateDb, currentUser }: UsersTabProps)
     return minLength && hasUpper && hasLower && hasNumber && hasSpecial;
   };
 
+  const isAdmin = currentUser?.email?.toLowerCase() === '1993lumendes@gmail.com';
+
   // Filtrar usuários
   const filteredUsers = db.users.filter(u => {
     const query = searchQuery.toLowerCase();
@@ -45,7 +47,6 @@ export default function UsersTab({ db, onUpdateDb, currentUser }: UsersTabProps)
     );
 
     // Solicitações pendentes (inactive) aparecem APENAS para o administrador
-    const isAdmin = currentUser?.email?.toLowerCase() === '1993lumendes@gmail.com';
     if (u.status === 'inactive' && !isAdmin) {
       return false;
     }
@@ -181,7 +182,7 @@ export default function UsersTab({ db, onUpdateDb, currentUser }: UsersTabProps)
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      {user.status === 'inactive' && currentUser?.email?.toLowerCase() === '1993lumendes@gmail.com' && (
+                      {user.status === 'inactive' && isAdmin && (
                         <button 
                           className="btn-primary" 
                           style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#10b981' }}
@@ -191,13 +192,19 @@ export default function UsersTab({ db, onUpdateDb, currentUser }: UsersTabProps)
                         </button>
                       )}
                       {user.email?.toLowerCase() !== '1993lumendes@gmail.com' && user.id !== 'user-1' ? (
-                        <button 
-                          className="btn-danger" 
-                          style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                          onClick={() => handleDeleteUser(user.id, user.name)}
-                        >
-                          Revogar Acesso
-                        </button>
+                        isAdmin ? (
+                          <button 
+                            className="btn-danger" 
+                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                            onClick={() => handleDeleteUser(user.id, user.name)}
+                          >
+                            Revogar Acesso
+                          </button>
+                        ) : (
+                          <span className="badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                            Acesso Ativo
+                          </span>
+                        )
                       ) : (
                         <span className="badge" style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent)' }}>
                           Administrador

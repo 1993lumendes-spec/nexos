@@ -65,11 +65,11 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
   
   // Estados para o seletor de crimes rápidos nos antecedentes
   const [selectedRecordCrime, setSelectedRecordCrime] = useState('');
-  const [recordCrimeQty, setRecordCrimeQty] = useState('');
   
   // Estados para formulário de cadastro/edição
   const [formId, setFormId] = useState('');
   const [formName, setFormName] = useState('');
+  const [formIsUnidentified, setFormIsUnidentified] = useState(false);
   const [formRg, setFormRg] = useState('');
   const [formAliases, setFormAliases] = useState('');
   const [formGangId, setFormGangId] = useState('');
@@ -162,7 +162,7 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
     setFormBirthDate('');
     setFormCrimes([]);
     setSelectedRecordCrime('');
-    setRecordCrimeQty('');
+    setFormIsUnidentified(false);
     setIsModalOpen(true);
   };
 
@@ -185,7 +185,7 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
       .map(c => c.id);
     setFormCrimes(linkedCrimes);
     setSelectedRecordCrime('');
-    setRecordCrimeQty('');
+    setFormIsUnidentified(suspect.isUnidentified || false);
     
     setIsModalOpen(true);
   };
@@ -210,7 +210,8 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
         criminalRecord: formCriminalRecord,
         status: formStatus,
         birthDate: formBirthDate,
-        modusOperandi: formModusOperandi
+        modusOperandi: formModusOperandi,
+        isUnidentified: formIsUnidentified
       };
       updatedSuspects.push(newSuspect);
       setSelectedSuspect(newSuspect); // Abre a ficha do suspeito cadastrado
@@ -226,7 +227,8 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
             criminalRecord: formCriminalRecord,
             status: formStatus,
             birthDate: formBirthDate,
-            modusOperandi: formModusOperandi
+            modusOperandi: formModusOperandi,
+            isUnidentified: formIsUnidentified
           };
           if (selectedSuspect?.id === formId) {
             setSelectedSuspect(updated);
@@ -504,19 +506,45 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
         {filteredSuspects.map(suspect => {
           const gang = db.gangs.find(g => g.id === suspect.gangId);
           const crimesCount = db.crimes.filter(c => c.suspectsInvolved.includes(suspect.id)).length;
+          const isUnidentified = suspect.isUnidentified || suspect.name.toUpperCase().startsWith('DESCONHECIDO');
           
           return (
             <div 
               key={suspect.id} 
               className="suspect-card"
               onClick={() => setSelectedSuspect(suspect)}
+              style={isUnidentified ? {
+                border: '1.5px dashed var(--warning)',
+                backgroundColor: 'rgba(245, 158, 11, 0.03)',
+                boxShadow: '0 0 15px rgba(245, 158, 11, 0.05)'
+              } : undefined}
             >
-              <img 
-                src={suspect.primaryPhoto} 
-                alt={suspect.name} 
-                className="suspect-card-image"
-                style={{ aspectRatio: '3/4', objectFit: 'cover' }}
-              />
+              <div style={{ position: 'relative' }}>
+                <img 
+                  src={suspect.primaryPhoto} 
+                  alt={suspect.name} 
+                  className="suspect-card-image"
+                  style={{ aspectRatio: '3/4', objectFit: 'cover', display: 'block', width: '100%' }}
+                />
+                {isUnidentified && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    backgroundColor: 'var(--warning)',
+                    color: '#000',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    letterSpacing: '0.05em',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                    pointerEvents: 'none'
+                  }}>
+                    NÃO IDENTIFICADO
+                  </div>
+                )}
+              </div>
               <div className="suspect-card-content">
                 <div className="suspect-card-header">
                   <div>
@@ -775,6 +803,30 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
                 />
               </div>
 
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-8px', marginBottom: '16px' }}>
+                <input 
+                  type="checkbox" 
+                  id="isUnidentified" 
+                  checked={formIsUnidentified} 
+                  onChange={(e) => {
+                    setFormIsUnidentified(e.target.checked);
+                    if (e.target.checked) {
+                      if (!formName.trim() || formName.toUpperCase().startsWith('DESCONHECIDO')) {
+                        setFormName(`DESCONHECIDO - ${formId.slice(-6).toUpperCase()}`);
+                      }
+                    } else {
+                      if (formName.toUpperCase().startsWith('DESCONHECIDO')) {
+                        setFormName('');
+                      }
+                    }
+                  }} 
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                <label htmlFor="isUnidentified" style={{ marginBottom: 0, cursor: 'pointer', fontSize: '0.85rem', userSelect: 'none' }}>
+                  Suspeito ainda não identificado (Desconhecido)
+                </label>
+              </div>
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Documento RG</label>
@@ -859,16 +911,6 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
                       ))}
                     </datalist>
                   </div>
-                  <div style={{ width: '85px' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Qtd. (Opcional)</span>
-                    <input 
-                      type="text"
-                      className="form-input"
-                      placeholder="Ex: 5x"
-                      value={recordCrimeQty}
-                      onChange={(e) => setRecordCrimeQty(e.target.value)}
-                    />
-                  </div>
                   <button 
                     type="button" 
                     className="btn-primary" 
@@ -876,10 +918,7 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
                     onClick={() => {
                       if (!selectedRecordCrime.trim()) return alert('Selecione ou digite um crime para adicionar!');
                       
-                      const qtySuffix = recordCrimeQty.trim() 
-                        ? ` - ${recordCrimeQty.trim().toLowerCase().endsWith('x') ? recordCrimeQty.trim() : recordCrimeQty.trim() + 'x'}`
-                        : '';
-                      const formattedLine = `- ${selectedRecordCrime.trim()}${qtySuffix}`;
+                      const formattedLine = `- ${selectedRecordCrime.trim()}`;
                       
                       if (formCriminalRecord.trim()) {
                         setFormCriminalRecord(formCriminalRecord.trim() + '\n' + formattedLine);
@@ -888,7 +927,6 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
                       }
                       
                       setSelectedRecordCrime('');
-                      setRecordCrimeQty('');
                     }}
                   >
                     + Adicionar

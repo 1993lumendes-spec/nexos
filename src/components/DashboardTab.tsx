@@ -71,6 +71,23 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
   const [searchSuspectInput, setSearchSuspectInput] = useState('');
   const [searchVehicleInput, setSearchVehicleInput] = useState('');
 
+  // Estados para cadastros inline no modal de ocorrência
+  const [showAddGangInline, setShowAddGangInline] = useState(false);
+  const [newGangName, setNewGangName] = useState('');
+  const [newGangOrigin, setNewGangOrigin] = useState('');
+  const [newGangColor, setNewGangColor] = useState('#6366f1');
+
+  const [showAddSuspectInline, setShowAddSuspectInline] = useState(false);
+  const [newSuspectName, setNewSuspectName] = useState('');
+  const [newSuspectAliases, setNewSuspectAliases] = useState('');
+  const [newSuspectRg, setNewSuspectRg] = useState('');
+  const [newSuspectIsUnidentified, setNewSuspectIsUnidentified] = useState(false);
+
+  const [showAddVehicleInline, setShowAddVehicleInline] = useState(false);
+  const [newVehiclePlate, setNewVehiclePlate] = useState('');
+  const [newVehicleModel, setNewVehicleModel] = useState('');
+  const [newVehicleColor, setNewVehicleColor] = useState('');
+
   // Estados para modal de novo suspeito
   const [isSuspectModalOpen, setIsSuspectModalOpen] = useState(false);
   const [suspName, setSuspName] = useState('');
@@ -246,6 +263,80 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
     }
   };
 
+  const handleSaveGangInline = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!newGangName.trim()) return alert('O nome da quadrilha é obrigatório!');
+    const newGang = {
+      id: `gang-${Date.now()}`,
+      name: newGangName.trim(),
+      originCity: newGangOrigin.trim() || 'LAJEADO',
+      color: newGangColor,
+      description: 'CADASTRADA DE FORMA RÁPIDA VIA OCORRÊNCIA.'
+    };
+    onUpdateDb({
+      ...db,
+      gangs: [...db.gangs, newGang]
+    });
+    setCrimeGangId(newGang.id);
+    setShowAddGangInline(false);
+    setNewGangName('');
+    setNewGangOrigin('');
+    setNewGangColor('#6366f1');
+  };
+
+  const handleSaveSuspectInline = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!newSuspectName.trim()) return alert('O nome do suspeito é obrigatório!');
+    const defaultAvatar = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%232a2f3d"/><circle cx="100" cy="80" r="40" fill="%234b5563"/><path d="M40,160 C40,120 160,120 160,160 Z" fill="%234b5563"/></svg>`;
+    const newSuspect = {
+      id: `susp-${Date.now()}`,
+      name: newSuspectName.trim(),
+      rg: newSuspectRg.trim(),
+      aliases: newSuspectAliases.trim(),
+      primaryPhoto: defaultAvatar,
+      photos: [],
+      gangId: crimeGangId || '',
+      criminalRecord: 'SEM ANTECEDENTES RELATADOS.',
+      status: 'active' as const,
+      isUnidentified: newSuspectIsUnidentified
+    };
+    onUpdateDb({
+      ...db,
+      suspects: [...db.suspects, newSuspect]
+    });
+    setCrimeSuspects([...crimeSuspects, newSuspect.id]);
+    setShowAddSuspectInline(false);
+    setNewSuspectName('');
+    setNewSuspectAliases('');
+    setNewSuspectRg('');
+    setNewSuspectIsUnidentified(false);
+  };
+
+  const handleSaveVehicleInline = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!newVehiclePlate.trim() || !newVehicleModel.trim()) {
+      return alert('Placa e Modelo são obrigatórios!');
+    }
+    const newVehicle = {
+      id: `veh-${Date.now()}`,
+      plate: newVehiclePlate.trim(),
+      brandModel: newVehicleModel.trim(),
+      color: newVehicleColor.trim() || 'NÃO INFORMADA',
+      gangId: crimeGangId || '',
+      suspectId: '',
+      description: 'CADASTRADO DE FORMA RÁPIDA VIA OCORRÊNCIA.'
+    };
+    onUpdateDb({
+      ...db,
+      vehicles: [...db.vehicles, newVehicle]
+    });
+    setCrimeVehicles([...crimeVehicles, newVehicle.id]);
+    setShowAddVehicleInline(false);
+    setNewVehiclePlate('');
+    setNewVehicleModel('');
+    setNewVehicleColor('');
+  };
+
   // Handler para criar nova ocorrência
   const handleSaveCrime = (e: React.FormEvent) => {
     e.preventDefault();
@@ -286,6 +377,22 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
     setCrimeStolenValue('');
     setCrimeSuspects([]);
     setCrimeVehicles([]);
+
+    // Limpar estados inline
+    setShowAddGangInline(false);
+    setNewGangName('');
+    setNewGangOrigin('');
+    setNewGangColor('#6366f1');
+    setShowAddSuspectInline(false);
+    setNewSuspectName('');
+    setNewSuspectAliases('');
+    setNewSuspectRg('');
+    setNewSuspectIsUnidentified(false);
+    setShowAddVehicleInline(false);
+    setNewVehiclePlate('');
+    setNewVehicleModel('');
+    setNewVehicleColor('');
+
     setIsCrimeModalOpen(false);
     alert('Nova ocorrência cadastrada com sucesso!');
   };
@@ -821,34 +928,142 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
               </div>
 
               <div className="form-group">
-                <label>Quadrilha Especializada Suspeita</label>
-                <select 
-                  className="form-select"
-                  value={crimeGangId}
-                  onChange={(e) => setCrimeGangId(e.target.value)}
-                >
-                  <option value="">Nenhuma / Sem Quadrilha Definida</option>
-                  {db.gangs.map(g => (
-                    <option key={g.id} value={g.id}>{g.name} (Origem: {g.originCity})</option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ marginBottom: 0 }}>Quadrilha Especializada Suspeita</label>
+                  <button 
+                    type="button" 
+                    className="btn-secondary" 
+                    style={{ padding: '2px 8px', fontSize: '0.75rem', height: 'auto' }}
+                    onClick={() => setShowAddGangInline(!showAddGangInline)}
+                  >
+                    {showAddGangInline ? '✕ Fechar' : '+ Nova Quadrilha'}
+                  </button>
+                </div>
+                {!showAddGangInline ? (
+                  <select 
+                    className="form-select"
+                    value={crimeGangId}
+                    onChange={(e) => setCrimeGangId(e.target.value)}
+                  >
+                    <option value="">Nenhuma / Sem Quadrilha Definida</option>
+                    {db.gangs.map(g => (
+                      <option key={g.id} value={g.id}>{g.name} (Origem: {g.originCity})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={{ padding: '12px', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(255,255,255,0.01)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)' }}>CADASTRAR QUADRILHA INLINE</span>
+                    <div className="form-group">
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Nome da Quadrilha" 
+                        value={newGangName} 
+                        onChange={e => setNewGangName(e.target.value)} 
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Cidade Sede (Ex: Porto Alegre)" 
+                        value={newGangOrigin} 
+                        onChange={e => setNewGangOrigin(e.target.value)} 
+                        style={{ flex: 2 }}
+                      />
+                      <input 
+                        type="color" 
+                        className="form-input" 
+                        value={newGangColor} 
+                        onChange={e => setNewGangColor(e.target.value)} 
+                        style={{ flex: 1, padding: '4px', height: '40px', cursor: 'pointer' }} 
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button type="button" className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => setShowAddGangInline(false)}>Cancelar</button>
+                      <button type="button" className="btn-primary" style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: 'var(--accent)' }} onClick={handleSaveGangInline}>Salvar</button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Vínculo de Suspeitos com Autocompletar */}
               <div className="form-group">
-                <label>Vincular Suspeitos do Banco</label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <input 
-                    type="text" 
-                    className="form-input"
-                    placeholder="Digite o Nome, RG ou Apelido do suspeito..."
-                    value={searchSuspectInput}
-                    onChange={(e) => setSearchSuspectInput(e.target.value)}
-                  />
-                  <button type="button" className="btn-secondary" onClick={handleSearchSuspectSubmit}>
-                    Buscar e Vincular
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ marginBottom: 0 }}>Vincular Suspeitos do Banco</label>
+                  <button 
+                    type="button" 
+                    className="btn-secondary" 
+                    style={{ padding: '2px 8px', fontSize: '0.75rem', height: 'auto' }}
+                    onClick={() => setShowAddSuspectInline(!showAddSuspectInline)}
+                  >
+                    {showAddSuspectInline ? '✕ Fechar' : '+ Novo Suspeito'}
                   </button>
                 </div>
+                {showAddSuspectInline ? (
+                  <div style={{ padding: '12px', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(255,255,255,0.01)', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)' }}>CADASTRAR SUSPEITO INLINE</span>
+                    <div className="form-group">
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Nome Completo do Suspeito" 
+                        value={newSuspectName} 
+                        onChange={e => setNewSuspectName(e.target.value)} 
+                      />
+                    </div>
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-4px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="newSuspectIsUnidentified" 
+                        checked={newSuspectIsUnidentified} 
+                        onChange={e => {
+                          setNewSuspectIsUnidentified(e.target.checked);
+                          if (e.target.checked) {
+                            setNewSuspectName(`DESCONHECIDO - ${String(Date.now()).slice(-6).toUpperCase()}`);
+                          } else {
+                            setNewSuspectName('');
+                          }
+                        }} 
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                      <label htmlFor="newSuspectIsUnidentified" style={{ marginBottom: 0, fontSize: '0.8rem', cursor: 'pointer' }}>Ainda não identificado (Desconhecido)</label>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="RG (Opcional)" 
+                        value={newSuspectRg} 
+                        onChange={e => setNewSuspectRg(e.target.value)} 
+                      />
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Apelidos (Opcional)" 
+                        value={newSuspectAliases} 
+                        onChange={e => setNewSuspectAliases(e.target.value)} 
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button type="button" className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => setShowAddSuspectInline(false)}>Cancelar</button>
+                      <button type="button" className="btn-primary" style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: 'var(--accent)' }} onClick={handleSaveSuspectInline}>Salvar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input 
+                      type="text" 
+                      className="form-input"
+                      placeholder="Digite o Nome, RG ou Apelido do suspeito..."
+                      value={searchSuspectInput}
+                      onChange={(e) => setSearchSuspectInput(e.target.value)}
+                    />
+                    <button type="button" className="btn-secondary" onClick={handleSearchSuspectSubmit}>
+                      Buscar e Vincular
+                    </button>
+                  </div>
+                )}
 
                 {/* Lista de Sugestões de Suspeito */}
                 {searchSuspectInput.trim().length > 1 && (
@@ -890,19 +1105,66 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
 
               {/* Vínculo de Veículos com Autocompletar */}
               <div className="form-group">
-                <label>Vincular Veículos Suspeitos</label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <input 
-                    type="text" 
-                    className="form-input"
-                    placeholder="Digite a Placa do veículo..."
-                    value={searchVehicleInput}
-                    onChange={(e) => setSearchVehicleInput(e.target.value)}
-                  />
-                  <button type="button" className="btn-secondary" onClick={handleSearchVehicleSubmit}>
-                    Buscar e Vincular
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ marginBottom: 0 }}>Vincular Veículos Suspeitos</label>
+                  <button 
+                    type="button" 
+                    className="btn-secondary" 
+                    style={{ padding: '2px 8px', fontSize: '0.75rem', height: 'auto' }}
+                    onClick={() => setShowAddVehicleInline(!showAddVehicleInline)}
+                  >
+                    {showAddVehicleInline ? '✕ Fechar' : '+ Novo Veículo'}
                   </button>
                 </div>
+                {showAddVehicleInline ? (
+                  <div style={{ padding: '12px', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(255,255,255,0.01)', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)' }}>CADASTRAR VEÍCULO INLINE</span>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Placa" 
+                        value={newVehiclePlate} 
+                        onChange={e => setNewVehiclePlate(e.target.value)} 
+                        style={{ flex: 1 }}
+                      />
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Modelo (Ex: VW Gol)" 
+                        value={newVehicleModel} 
+                        onChange={e => setNewVehicleModel(e.target.value)} 
+                        style={{ flex: 2 }}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Cor (Ex: Prata)" 
+                        value={newVehicleColor} 
+                        onChange={e => setNewVehicleColor(e.target.value)} 
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button type="button" className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => setShowAddVehicleInline(false)}>Cancelar</button>
+                      <button type="button" className="btn-primary" style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: 'var(--accent)' }} onClick={handleSaveVehicleInline}>Salvar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input 
+                      type="text" 
+                      className="form-input"
+                      placeholder="Digite a Placa do veículo..."
+                      value={searchVehicleInput}
+                      onChange={(e) => setSearchVehicleInput(e.target.value)}
+                    />
+                    <button type="button" className="btn-secondary" onClick={handleSearchVehicleSubmit}>
+                      Buscar e Vincular
+                    </button>
+                  </div>
+                )}
 
                 {/* Sugestões de Placas */}
                 {searchVehicleInput.trim().length > 1 && (
