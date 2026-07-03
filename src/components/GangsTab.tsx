@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Search, Plus, X, Edit, Trash2, ShieldAlert } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus, X, Edit, Trash2, ShieldAlert, Download } from 'lucide-react';
+import { toJpeg } from 'html-to-image';
 import type { Gang, Suspect, Crime, SystemUser, SuspectVehicle } from '../types';
 import { CITIES_RS } from '../utils/mockData';
 
@@ -27,6 +28,43 @@ export default function GangsTab({ db, onUpdateDb }: GangsTabProps) {
   const [formOrigin, setFormOrigin] = useState('');
   const [formColor, setFormColor] = useState('#6366f1');
   const [formDescription, setFormDescription] = useState('');
+
+  // Estados para exportação de ficha
+  const [exportingGang, setExportingGang] = useState<Gang | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    if (!exportingGang) return;
+    setIsExporting(true);
+
+    const timer = setTimeout(() => {
+      const node = document.getElementById('gang-dossier-export');
+      if (!node) {
+        setExportingGang(null);
+        setIsExporting(false);
+        return;
+      }
+
+      toJpeg(node, { quality: 0.95, backgroundColor: '#111827' })
+        .then((dataUrl) => {
+          const link = document.createElement('a');
+          const cleanName = exportingGang.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+          link.download = `ficha_quadrilha_${cleanName}.jpeg`;
+          link.href = dataUrl;
+          link.click();
+          setExportingGang(null);
+          setIsExporting(false);
+        })
+        .catch((err) => {
+          console.error('Erro ao exportar ficha:', err);
+          alert('Erro ao exportar a ficha da quadrilha.');
+          setExportingGang(null);
+          setIsExporting(false);
+        });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [exportingGang]);
 
   // Filtrar quadrilhas
   const filteredGangs = db.gangs.filter(g => {
@@ -236,6 +274,15 @@ export default function GangsTab({ db, onUpdateDb }: GangsTabProps) {
                           <span>Editar</span>
                         </button>
                         <button 
+                          className="btn-secondary" 
+                          style={{ padding: '6px 10px', fontSize: '0.75rem', backgroundColor: 'var(--accent)', color: '#fff' }}
+                          onClick={() => setExportingGang(gang)}
+                          disabled={isExporting}
+                        >
+                          <Download size={12} />
+                          <span>{isExporting ? '...' : 'Exportar'}</span>
+                        </button>
+                        <button 
                           className="btn-danger" 
                           style={{ padding: '6px 10px', fontSize: '0.75rem' }}
                           onClick={() => handleDeleteGang(gang.id, gang.name)}
@@ -338,6 +385,100 @@ export default function GangsTab({ db, onUpdateDb }: GangsTabProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Template de Exportação da Ficha de Quadrilha (Fica fora da tela) */}
+      {exportingGang && (
+        <div 
+          id="gang-dossier-export" 
+          className="no-uppercase"
+          style={{
+            position: 'absolute',
+            left: '-9999px',
+            top: '-9999px',
+            width: '800px',
+            backgroundColor: '#111827',
+            color: '#f9fafb',
+            padding: '40px',
+            fontFamily: '"Courier New", Courier, monospace',
+            border: '4px solid #374151',
+            boxSizing: 'border-box'
+          }}
+        >
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #a855f7', paddingBottom: '15px', marginBottom: '25px' }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#a855f7', textTransform: 'uppercase' }}>NEXOS - SISTEMA DE INTELIGÊNCIA</h1>
+              <span style={{ fontSize: '0.8rem', color: '#9ca3af', textTransform: 'uppercase' }}>DADOS DE FACÇÕES E QUADRILHAS</span>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase' }}>DATA DA CONSULTA</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{new Date().toLocaleDateString('pt-BR')}</div>
+            </div>
+          </div>
+
+          {/* Document Title */}
+          <div style={{ textAlign: 'center', backgroundColor: 'rgba(168, 85, 247, 0.1)', padding: '10px', borderRadius: '4px', marginBottom: '30px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', letterSpacing: '2px', fontWeight: 'bold', color: '#f3f4f6', textTransform: 'uppercase' }}>RELATÓRIO DE FACÇÃO CRIMINOSA</h2>
+          </div>
+
+          {/* Gang details */}
+          <div style={{ display: 'flex', gap: '20px', marginBottom: '25px', borderBottom: '1px solid #374151', paddingBottom: '20px' }}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: exportingGang.color, border: '2px solid #f9fafb', alignSelf: 'center' }}></div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase' }}>NOME DA ORGANIZAÇÃO</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold', textTransform: 'uppercase' }}>{exportingGang.name}</div>
+            </div>
+            <div style={{ width: '200px' }}>
+              <div style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase' }}>CIDADE DE ORIGEM / SEDE</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 'bold', textTransform: 'uppercase' }}>{exportingGang.originCity || 'NÃO INFORMADA'}</div>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div style={{ marginBottom: '25px' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#a855f7', marginBottom: '8px', borderBottom: '1px solid #a855f7', paddingBottom: '4px', textTransform: 'uppercase' }}>DESCRIÇÃO E HISTÓRICO</div>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '4px', border: '1px solid #374151', minHeight: '60px', whiteSpace: 'pre-wrap', textTransform: 'uppercase' }}>
+              {exportingGang.description || 'NENHUM HISTÓRICO ADICIONADO.'}
+            </div>
+          </div>
+
+          {/* Members List */}
+          <div style={{ marginBottom: '25px' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#a855f7', marginBottom: '8px', borderBottom: '1px solid #a855f7', paddingBottom: '4px', textTransform: 'uppercase' }}>MEMBROS IDENTIFICADOS ({db.suspects.filter(s => s.gangId === exportingGang.id).length})</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {db.suspects.filter(s => s.gangId === exportingGang.id).map(s => (
+                <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px dashed #374151', borderRadius: '4px' }}>
+                  <span style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{s.name} {s.aliases ? `("${s.aliases}")` : ''}</span>
+                  <span style={{ fontSize: '0.85rem', color: '#9ca3af', textTransform: 'uppercase' }}>RG: {s.rg || 'SEM RG'} | STATUS: {s.status}</span>
+                </div>
+              ))}
+              {db.suspects.filter(s => s.gangId === exportingGang.id).length === 0 && (
+                <div style={{ fontSize: '0.85rem', color: '#6b7280', fontStyle: 'italic', textTransform: 'uppercase' }}>NENHUM MEMBRO VINCULADO NO MOMENTO.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Vehicles List */}
+          <div style={{ marginBottom: '25px' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#a855f7', marginBottom: '8px', borderBottom: '1px solid #a855f7', paddingBottom: '4px', textTransform: 'uppercase' }}>VEÍCULOS ASSOCIADOS ({db.vehicles.filter(v => v.gangId === exportingGang.id).length})</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {db.vehicles.filter(v => v.gangId === exportingGang.id).map(v => (
+                <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px dashed #374151', borderRadius: '4px' }}>
+                  <span style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>PLACA: {v.plate}</span>
+                  <span style={{ fontSize: '0.85rem', color: '#9ca3af', textTransform: 'uppercase' }}>{v.brandModel} ({v.color})</span>
+                </div>
+              ))}
+              {db.vehicles.filter(v => v.gangId === exportingGang.id).length === 0 && (
+                <div style={{ fontSize: '0.85rem', color: '#6b7280', fontStyle: 'italic', textTransform: 'uppercase' }}>NENHUM VEÍCULO VINCULADO NO MOMENTO.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Footnote */}
+          <div style={{ textAlign: 'center', fontSize: '0.7rem', color: '#6b7280', borderTop: '1px solid #374151', paddingTop: '15px', marginTop: '40px', textTransform: 'uppercase' }}>
+            DOCUMENTO CONFIDENCIAL - USO EXCLUSIVO EM OPERAÇÕES POLICIAIS
           </div>
         </div>
       )}

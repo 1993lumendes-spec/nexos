@@ -9,8 +9,10 @@ import {
   FileText, 
   AlertTriangle,
   Upload,
-  CheckCircle
+  CheckCircle,
+  Download
 } from 'lucide-react';
+import { toJpeg } from 'html-to-image';
 import type { Gang, Suspect, Crime, SystemUser, SuspectVehicle } from '../types';
 
 const DEFAULT_CRIME_TYPES = [
@@ -84,6 +86,43 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
   const [newPhotoLoc, setNewPhotoLoc] = useState('');
   const [newPhotoDate, setNewPhotoDate] = useState('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  // Estados para exportar a ficha do suspeito
+  const [exportingSuspect, setExportingSuspect] = useState<Suspect | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    if (!exportingSuspect) return;
+    setIsExporting(true);
+
+    const timer = setTimeout(() => {
+      const node = document.getElementById('suspect-dossier-export');
+      if (!node) {
+        setExportingSuspect(null);
+        setIsExporting(false);
+        return;
+      }
+
+      toJpeg(node, { quality: 0.95, backgroundColor: '#111827' })
+        .then((dataUrl) => {
+          const link = document.createElement('a');
+          const cleanName = exportingSuspect.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+          link.download = `ficha_suspeito_${cleanName}.jpeg`;
+          link.href = dataUrl;
+          link.click();
+          setExportingSuspect(null);
+          setIsExporting(false);
+        })
+        .catch((err) => {
+          console.error('Erro ao exportar ficha:', err);
+          alert('Erro ao exportar a ficha de identificação.');
+          setExportingSuspect(null);
+          setIsExporting(false);
+        });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [exportingSuspect]);
 
   // Escutar evento do Dashboard para abrir a ficha de um suspeito específico
   useEffect(() => {
@@ -624,10 +663,19 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
                     </span>
                   </p>
 
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
                     <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => handleOpenEditModal(selectedSuspect)}>
                       <Edit3 size={14} />
                       Editar Ficha
+                    </button>
+                    <button 
+                      className="btn-secondary" 
+                      style={{ padding: '6px 12px', fontSize: '0.8rem', backgroundColor: 'var(--accent)', color: '#fff' }} 
+                      onClick={() => setExportingSuspect(selectedSuspect)}
+                      disabled={isExporting}
+                    >
+                      <Download size={14} />
+                      {isExporting ? 'Exportando...' : 'Exportar Ficha (.JPEG)'}
                     </button>
                     <button className="btn-danger" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => handleDeleteSuspect(selectedSuspect.id)}>
                       <Trash2 size={14} />
@@ -990,6 +1038,120 @@ export default function SuspectsTab({ db, onUpdateDb }: SuspectsTabProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Template de Exportação da Ficha do Suspeito (Fica fora da tela) */}
+      {exportingSuspect && (
+        <div 
+          id="suspect-dossier-export" 
+          className="no-uppercase"
+          style={{
+            position: 'absolute',
+            left: '-9999px',
+            top: '-9999px',
+            width: '800px',
+            backgroundColor: '#111827',
+            color: '#f9fafb',
+            padding: '40px',
+            fontFamily: '"Courier New", Courier, monospace',
+            border: '4px solid #374151',
+            boxSizing: 'border-box'
+          }}
+        >
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ef4444', paddingBottom: '15px', marginBottom: '25px' }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444', textTransform: 'uppercase' }}>NEXOS - SISTEMA DE INTELIGÊNCIA</h1>
+              <span style={{ fontSize: '0.8rem', color: '#9ca3af', textTransform: 'uppercase' }}>DEPARTAMENTO DE SEGURANÇA E INVESTIGAÇÃO</span>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase' }}>DATA DA CONSULTA</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{new Date().toLocaleDateString('pt-BR')}</div>
+            </div>
+          </div>
+
+          {/* Document Title */}
+          <div style={{ textAlign: 'center', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '4px', marginBottom: '30px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', letterSpacing: '2px', fontWeight: 'bold', color: '#f3f4f6', textTransform: 'uppercase' }}>FICHA DE IDENTIFICAÇÃO CRIMINAL</h2>
+          </div>
+
+          {/* Top Row: Photo & Details */}
+          <div style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
+            {/* Photo */}
+            <div>
+              <img 
+                src={exportingSuspect.primaryPhoto} 
+                alt={exportingSuspect.name} 
+                style={{
+                  width: '200px',
+                  height: '250px',
+                  objectFit: 'cover',
+                  borderRadius: '6px',
+                  border: '3px solid #374151',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.5)'
+                }}
+              />
+              {(exportingSuspect.isUnidentified || exportingSuspect.name.toUpperCase().startsWith('DESCONHECIDO')) && (
+                <div style={{ marginTop: '10px', backgroundColor: '#eab308', color: '#000', textAlign: 'center', fontWeight: 'bold', fontSize: '0.8rem', padding: '4px 0', borderRadius: '4px', textTransform: 'uppercase' }}>
+                  NÃO IDENTIFICADO
+                </div>
+              )}
+            </div>
+
+            {/* Info Details */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase' }}>NOME COMPLETO</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', borderBottom: '1px solid #374151', paddingBottom: '4px', textTransform: 'uppercase' }}>{exportingSuspect.name}</div>
+              </div>
+              
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase' }}>VULGO / APELIDOS</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', borderBottom: '1px solid #374151', paddingBottom: '4px', textTransform: 'uppercase' }}>{exportingSuspect.aliases || 'NENHUM REGISTRADO'}</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '20px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase' }}>DOCUMENTO (RG)</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #374151', paddingBottom: '4px' }}>{exportingSuspect.rg || 'NÃO INFORMADO'}</div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase' }}>STATUS</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #374151', paddingBottom: '4px', color: exportingSuspect.status === 'active' ? '#ef4444' : exportingSuspect.status === 'arrested' ? '#10b981' : '#f59e0b', textTransform: 'uppercase' }}>
+                    {exportingSuspect.status === 'active' ? 'ATIVO' : exportingSuspect.status === 'arrested' ? 'PRESO / DETIDO' : 'SOB INVESTIGAÇÃO'}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase' }}>QUADRILHA VINCULADA</div>
+                <div style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #374151', paddingBottom: '4px', textTransform: 'uppercase' }}>
+                  {db.gangs.find(g => g.id === exportingSuspect.gangId)?.name || 'NENHUM VÍNCULO DIRETO'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Criminal Record */}
+          <div style={{ marginBottom: '25px' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#ef4444', marginBottom: '8px', borderBottom: '1px solid #ef4444', paddingBottom: '4px', textTransform: 'uppercase' }}>ANTECEDENTES CRIMINAIS</div>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '4px', border: '1px solid #374151', minHeight: '80px', whiteSpace: 'pre-wrap', textTransform: 'uppercase' }}>
+              {exportingSuspect.criminalRecord || 'SEM ANTECEDENTES CRIMINAIS REGISTRADOS.'}
+            </div>
+          </div>
+
+          {/* Modus Operandi */}
+          <div style={{ marginBottom: '25px' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#ef4444', marginBottom: '8px', borderBottom: '1px solid #ef4444', paddingBottom: '4px', textTransform: 'uppercase' }}>MODUS OPERANDI / ANOTAÇÕES</div>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '4px', border: '1px solid #374151', minHeight: '60px', whiteSpace: 'pre-wrap', textTransform: 'uppercase' }}>
+              {exportingSuspect.modusOperandi || 'MODUS OPERANDI NÃO INFORMADO.'}
+            </div>
+          </div>
+
+          {/* Footnote */}
+          <div style={{ textAlign: 'center', fontSize: '0.7rem', color: '#6b7280', borderTop: '1px solid #374151', paddingTop: '15px', marginTop: '40px', textTransform: 'uppercase' }}>
+            DOCUMENTO CONFIDENCIAL - USO EXCLUSIVO EM OPERAÇÕES POLICIAIS
           </div>
         </div>
       )}
