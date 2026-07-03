@@ -9,7 +9,14 @@ const envUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 const rawUrl = localUrl || envUrl;
-const cleanUrl = rawUrl.replace(/^['"]|['"]$/g, '').trim();
+let cleanUrl = rawUrl.replace(/^['"]|['"]$/g, '').trim();
+
+// Remove o sufixo /rest/v1/ ou /rest/v1 caso o usuário tenha colado a URL da API REST por engano
+if (cleanUrl.endsWith('/rest/v1/')) {
+  cleanUrl = cleanUrl.slice(0, -9);
+} else if (cleanUrl.endsWith('/rest/v1')) {
+  cleanUrl = cleanUrl.slice(0, -8);
+}
 
 const rawKey = localKey || envKey;
 const cleanKey = rawKey.replace(/^['"]|['"]$/g, '').trim();
