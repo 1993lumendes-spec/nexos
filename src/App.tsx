@@ -78,9 +78,11 @@ function App() {
 
   // 1. Carregar Banco (Servidor -> Fallback LocalStorage)
   const cleanAndFixDb = (database: NexosState): NexosState => {
-    if (!database || !Array.isArray(database.crimes)) return database;
+    if (!database) return database;
     let changed = false;
-    const updatedCrimes = database.crimes.map(crime => {
+    
+    // 1. Corrigir coordenadas de Lajeado nos crimes
+    const updatedCrimes = (database.crimes || []).map(crime => {
       const normalizedCity = crime.city.trim().toLowerCase();
       if (crime.coordinates && crime.coordinates.length >= 2 && normalizedCity === 'lajeado' && crime.coordinates[0] === -29.8 && crime.coordinates[1] === -52.5) {
         changed = true;
@@ -91,7 +93,23 @@ function App() {
       }
       return crime;
     });
-    return changed ? { ...database, crimes: updatedCrimes } : database;
+
+    // 2. Normalizar todos os nomes de quadrilhas e cidades de origem para maiúsculas
+    const updatedGangs = (database.gangs || []).map(gang => {
+      const upperName = gang.name.toUpperCase();
+      const upperCity = gang.originCity.toUpperCase();
+      if (gang.name !== upperName || gang.originCity !== upperCity) {
+        changed = true;
+        return {
+          ...gang,
+          name: upperName,
+          originCity: upperCity
+        };
+      }
+      return gang;
+    });
+
+    return changed ? { ...database, crimes: updatedCrimes, gangs: updatedGangs } : database;
   };
 
   const fetchDb = async () => {

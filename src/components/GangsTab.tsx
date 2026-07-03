@@ -124,8 +124,8 @@ export default function GangsTab({ db, onUpdateDb }: GangsTabProps) {
     if (modalMode === 'create') {
       const newGang: Gang = {
         id: formId,
-        name: formName,
-        originCity: formOrigin || 'Porto Alegre',
+        name: formName.trim().toUpperCase(),
+        originCity: (formOrigin || 'Porto Alegre').trim().toUpperCase(),
         color: formColor,
         description: formDescription || 'Sem detalhes fornecidos.'
       };
@@ -135,8 +135,8 @@ export default function GangsTab({ db, onUpdateDb }: GangsTabProps) {
         if (g.id === formId) {
           return {
             ...g,
-            name: formName,
-            originCity: formOrigin || 'Porto Alegre',
+            name: formName.trim().toUpperCase(),
+            originCity: (formOrigin || 'Porto Alegre').trim().toUpperCase(),
             color: formColor,
             description: formDescription
           };

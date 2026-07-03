@@ -146,8 +146,8 @@ export default function CrimesTab({ db, onUpdateDb }: CrimesTabProps) {
     if (!newGangName.trim()) return alert('O nome da quadrilha é obrigatório!');
     const newGang = {
       id: `gang-${Date.now()}`,
-      name: newGangName.trim(),
-      originCity: newGangOrigin.trim() || 'LAJEADO',
+      name: newGangName.trim().toUpperCase(),
+      originCity: newGangOrigin.trim().toUpperCase() || 'LAJEADO',
       color: newGangColor,
       description: 'CADASTRADA DE FORMA RÁPIDA VIA OCORRÊNCIA.'
     };

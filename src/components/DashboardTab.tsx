@@ -268,8 +268,8 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
     if (!newGangName.trim()) return alert('O nome da quadrilha é obrigatório!');
     const newGang = {
       id: `gang-${Date.now()}`,
-      name: newGangName.trim(),
-      originCity: newGangOrigin.trim() || 'LAJEADO',
+      name: newGangName.trim().toUpperCase(),
+      originCity: newGangOrigin.trim().toUpperCase() || 'LAJEADO',
       color: newGangColor,
       description: 'CADASTRADA DE FORMA RÁPIDA VIA OCORRÊNCIA.'
     };
@@ -478,8 +478,8 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
 
     const newGang: Gang = {
       id: `gang-${Date.now()}`,
-      name: gangName,
-      originCity: gangOrigin || 'Porto Alegre',
+      name: gangName.trim().toUpperCase(),
+      originCity: (gangOrigin || 'Porto Alegre').trim().toUpperCase(),
       color: gangColor,
       description: gangDescription || 'Sem detalhes fornecidos.'
     };
