@@ -141,6 +141,7 @@ function App() {
             await saveDatabaseToSupabase(mergedDb);
             const cleanedDb = cleanAndFixDb(mergedDb);
             setDb(cleanedDb);
+            saveDatabase(cleanedDb);
             return cleanedDb;
           } else {
             // Caso ambos estejam vazios, semeia dados de demonstração automaticamente
@@ -163,12 +164,14 @@ function App() {
             await saveDatabaseToSupabase(seededDb);
             const cleanedDb = cleanAndFixDb(seededDb);
             setDb(cleanedDb);
+            saveDatabase(cleanedDb);
             return cleanedDb;
           }
         }
 
         const cleanedDb = cleanAndFixDb(supabaseDb);
         setDb(cleanedDb);
+        saveDatabase(cleanedDb);
         if (cleanedDb !== supabaseDb) {
           saveDatabaseToSupabase(cleanedDb).catch(console.error);
         }
@@ -185,6 +188,7 @@ function App() {
         const serverDb = await res.json();
         const cleanedDb = cleanAndFixDb(serverDb);
         setDb(cleanedDb);
+        saveDatabase(cleanedDb);
         if (cleanedDb !== serverDb) {
           fetch('/api/db', {
             method: 'POST',
@@ -935,6 +939,30 @@ function App() {
             <Download size={16} />
             <span>Exportar Backup</span>
           </button>
+
+          {/* Status informativo sutil de sincronização da nuvem */}
+          <div style={{ 
+            marginTop: '12px', 
+            padding: '6px 10px', 
+            borderRadius: 'var(--radius-sm)', 
+            backgroundColor: isSupabaseConfigured() ? 'rgba(16, 185, 129, 0.06)' : 'rgba(245, 158, 11, 0.06)',
+            border: isSupabaseConfigured() ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid rgba(245, 158, 11, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '0.65rem'
+          }}>
+            <div style={{ 
+              width: '6px', 
+              height: '6px', 
+              borderRadius: '50%', 
+              backgroundColor: isSupabaseConfigured() ? '#10b981' : '#f59e0b',
+              boxShadow: isSupabaseConfigured() ? '0 0 6px #10b981' : '0 0 6px #f59e0b'
+            }} />
+            <span style={{ color: isSupabaseConfigured() ? 'var(--success)' : 'var(--warning)', fontWeight: 600, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+              {isSupabaseConfigured() ? 'Nuvem Conectada' : 'Modo Offline (Local)'}
+            </span>
+          </div>
         </div>
       </aside>
 
