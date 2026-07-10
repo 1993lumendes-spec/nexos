@@ -29,6 +29,7 @@ import {
 } from './utils/db';
 import { hashPassword, verifyPassword } from './utils/auth';
 import { isSupabaseConfigured, setDynamicSupabaseConfig } from './utils/supabaseClient';
+import { getCityCoords } from './utils/mockData';
 
 
 // Importando componentes das abas
@@ -79,14 +80,24 @@ function App() {
     if (!database) return database;
     let changed = false;
     
-    // 1. Corrigir coordenadas de Lajeado nos crimes
+    // 1. Corrigir coordenadas nos crimes (Auto-cura para [0,0], coordenadas inválidas ou erradas)
     const updatedCrimes = (database.crimes || []).map(crime => {
+      let currentCoords = crime.coordinates;
       const normalizedCity = crime.city.trim().toLowerCase();
-      if (crime.coordinates && crime.coordinates.length >= 2 && normalizedCity === 'lajeado' && crime.coordinates[0] === -29.8 && crime.coordinates[1] === -52.5) {
+      
+      const isInvalid = !currentCoords || 
+                        !Array.isArray(currentCoords) || 
+                        currentCoords.length < 2 || 
+                        (currentCoords[0] === 0 && currentCoords[1] === 0) ||
+                        // Caso antigo de coordenada padrão errada para Lajeado
+                        (normalizedCity === 'lajeado' && currentCoords[0] === -29.8 && currentCoords[1] === -52.5);
+                        
+      if (isInvalid) {
         changed = true;
+        const freshCoords = getCityCoords(crime.city);
         return {
           ...crime,
-          coordinates: [-29.4665, -51.9619] as [number, number]
+          coordinates: freshCoords
         };
       }
       return crime;

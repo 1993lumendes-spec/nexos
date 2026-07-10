@@ -146,7 +146,9 @@ export default function RoutesMapTab({ db }: RoutesMapTabProps) {
       const gangCrimes = activeCrimes.filter(c => c.gangId === gang.id);
 
       gangCrimes.forEach(crime => {
-        const targetCoords = crime.coordinates && crime.coordinates.length >= 2 ? crime.coordinates : getCityCoords(crime.city);
+        const targetCoords = crime.coordinates && crime.coordinates.length >= 2 && !(crime.coordinates[0] === 0 && crime.coordinates[1] === 0) 
+          ? crime.coordinates 
+          : getCityCoords(crime.city);
 
         // 1. Desenha a linha de rota (Origem -> Destino do Crime)
         const polyline = L.polyline([originCoords, targetCoords], {

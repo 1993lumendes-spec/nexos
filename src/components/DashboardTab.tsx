@@ -181,7 +181,9 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
         </div>
       `;
 
-      const coords = crime.coordinates && crime.coordinates.length >= 2 ? crime.coordinates : getCityCoords(crime.city);
+      const coords = crime.coordinates && crime.coordinates.length >= 2 && !(crime.coordinates[0] === 0 && crime.coordinates[1] === 0) 
+        ? crime.coordinates 
+        : getCityCoords(crime.city);
       const marker = L.circleMarker(coords, {
         radius: 9,
         fillColor: gangColorColor,
@@ -694,7 +696,9 @@ export default function DashboardTab({ db, onUpdateDb, onViewSuspect }: Dashboar
                               onClick={() => {
                                 const idx = db.crimes.findIndex(c => c.id === crime.id);
                                 if (idx !== -1 && markersRef.current[idx] && mapInstanceRef.current) {
-                                  const coords = crime.coordinates && crime.coordinates.length >= 2 ? crime.coordinates : getCityCoords(crime.city);
+                                  const coords = crime.coordinates && crime.coordinates.length >= 2 && !(crime.coordinates[0] === 0 && crime.coordinates[1] === 0) 
+                                    ? crime.coordinates 
+                                    : getCityCoords(crime.city);
                                   mapInstanceRef.current.setView(coords, 10);
                                   markersRef.current[idx].openPopup();
                                 }
